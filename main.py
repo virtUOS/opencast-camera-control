@@ -3,9 +3,7 @@ import json
 import time
 from dateutil.parser import *
 from datetime import datetime as dt
-
-# Used for fetching the calendar every 2 days
-days = 2
+import threading
 
 # Use command createCA for creation of capture agent. Has to be done daily.
 
@@ -31,7 +29,7 @@ def setPreset(preset, camera, verbose=False):
         return
     
     # TODO: Actually set preset with request method
-    code = requests.get(url, auth=("XXX", "XXX"))
+    code = requests.get(url, auth=("admin", "PASS"))
     return code
 
 def printPlanned(cal):
@@ -54,7 +52,7 @@ def getCalendar(agentId, cutoff, verbose=False):
     url = "https://develop.opencast.org/recordings/calendar.json?agentid=" + str(agentId) + "&cutoff=" + str(cutoff)
     print("REQUEST:",url)
 
-    calendar = requests.get(url, auth=("XXX", "XXX"))
+    calendar = requests.get(url, auth=("admin", "opencast"))
     if verbose:
         print("STATUS:",calendar.status_code)
         print("JSON:", calendar.json())
@@ -68,19 +66,10 @@ def loadConfig(filename):
         agents = json.load(file)
         print(type(agents), agents)
         return agents
-    
-def main():
-    global days
 
-    agents = loadConfig("./config.json")
-
-    # currently just one ca, if there are multiple, i have to use some kind of threading or use the following loop in nanotehr method i think
-    ca = list(agents.keys())[0]
-    cam = agents[ca]
-
-    print(ca, cam)
-    
-
+def loop(ca, cam):
+    # Used for fetching the calendar every 2 days
+    days = 2
     # fetch planned recordings, events are just tuples of (name, start, end)
     # calendar gets returned as well, probably don't need it after all
     events, _, _ = getCalendar(ca, getCutoff())
@@ -122,7 +111,7 @@ def main():
             _ = setPreset(1, cam)
         elif now == next_event[2]:
             print("Event \'" + next_event[0] + "\' has ended!")
-            
+
             # Return to home preset
             print("Return to Preset \'Home\'...")
             _ = setPreset(0, cam)
@@ -130,7 +119,7 @@ def main():
             print("Next Planned Event is \'" + next_event[0]+"\' in " + str((next_event[1] - now)/1000) + " seconds")
 
 
-        # 1 day has 86400 seconds, so it should be 86400 * 1000 (for milliseconds) and this * days to fetch the plan every two days (or later if needed)  
+            # 1 day has 86400 seconds, so it should be 86400 * 1000 (for milliseconds) and this * days to fetch the plan every two days (or later if needed)  
         if now - last_fetched > (86400000*days):
             print(now, last_fetched, now-last_fetched)
             events, response, _ = getCalendar(ca, getCutoff())
@@ -151,6 +140,20 @@ def main():
                     print("[WARNING] The calendar coudn't be fetched in the last 5 days. Will try again tomorrow.")
         time.sleep(1.0)
 
+def main():
+    agents = loadConfig("./config.json")
+
+
+    threads = list()
+    for ca in list(agents.keys()):
+        cam = agents[ca]
+        print(ca, cam)
+        x = threading.Thread(target=loop(ca, cam))
+        threads.append(x)
+        x.start()
+    
+    for index, thread in enumerate(threads):
+        thread.join()
     
     # Set preset to the according number [0, 100]
     # Also set the camera when the recording should be started
