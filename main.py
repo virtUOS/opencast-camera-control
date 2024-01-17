@@ -12,7 +12,7 @@ def getCutoff():
     # calculate the offset of now + 1 week
     cutoff = (round(time.time()) + 7*24*60*60)*1000
     
-    print("Cutoff =",cutoff)
+    #print("Cutoff =",cutoff)
     return cutoff
 
 # Works fine for now
@@ -50,7 +50,7 @@ def printPlanned(cal):
 
 def getCalendar(agentId, cutoff, verbose=False):
     url = "https://develop.opencast.org/recordings/calendar.json?agentid=" + str(agentId) + "&cutoff=" + str(cutoff)
-    print("REQUEST:",url)
+    print("[" + agentId + "] REQUEST:",url)
 
     calendar = requests.get(url, auth=("admin", "opencast"))
     if verbose:
@@ -64,7 +64,7 @@ def getCalendar(agentId, cutoff, verbose=False):
 def loadConfig(filename):
     with open(filename, "r") as file:
         agents = json.load(file)
-        print(type(agents), agents)
+        #print(type(agents), agents)
         return agents
 
 def loop(ca, cam):
@@ -77,15 +77,18 @@ def loop(ca, cam):
 
     # reverse so pop returns the next event
     events = sorted(events, key=lambda x: x[1], reverse=True)
-    next_event = events.pop()
-
     try:
+        next_event = events.pop()
         now = int(dt.strptime(str(parse(str(dt.now()))),'%Y-%m-%d %H:%M:%S.%f').timestamp()) * 1000
+    except IndexError:
+        print("[" + ca + "] No further events scheduled.")
+        # Just for debugging, remove soon and replace with handling empty calendars
+        return
     except:
         time.sleep(0.000001)
         now = int(dt.strptime(str(parse(str(dt.now()))),'%Y-%m-%d %H:%M:%S.%f').timestamp()) * 1000
 
-    print("Next Planned Event is \'" + next_event[0]+"\' in " + str((next_event[1] - now)/1000) + " seconds")
+    print("[" + ca + "] Next Planned Event is \'" + next_event[0]+"\' in " + str((next_event[1] - now)/1000) + " seconds")
 
     # Somewhere in this loop, I have to fetch the next events
     while True:
@@ -96,28 +99,32 @@ def loop(ca, cam):
             now = int(dt.strptime(str(parse(str(dt.now()))),'%Y-%m-%d %H:%M:%S.%f').timestamp()) * 1000
 
         if (next_event[1] - now)/1000 == 3:
-            print("3...")
+            print("[" + ca + "] 3...")
         elif (next_event[1] - now)/1000 == 2:
-            print("2...")
+            print("[" + ca + "] 2...")
         elif (next_event[1] - now)/1000 == 1:
-            print("1...")
+            print("[" + ca + "] 1...")
 
 
         if now == next_event[1]:
-            print("Event \'" + next_event[0] + "\' has started!")
+            print("[" + ca + "] Event \'" + next_event[0] + "\' has started!")
 
             # Move to recording preset
-            print("Move to Preset 1 for recording...")
+            print("[" + ca + "] Move to Preset 1 for recording...")
             _ = setPreset(1, cam)
         elif now == next_event[2]:
-            print("Event \'" + next_event[0] + "\' has ended!")
+            print("[" + ca + "] Event \'" + next_event[0] + "\' has ended!")
 
             # Return to home preset
-            print("Return to Preset \'Home\'...")
+            print("[" + ca + "] Return to Preset \'Home\'...")
             _ = setPreset(0, cam)
-            next_event = events.pop()
-            print("Next Planned Event is \'" + next_event[0]+"\' in " + str((next_event[1] - now)/1000) + " seconds")
-
+            try:
+                next_event = events.pop()
+                print("[" + ca + "] Next Planned Event is \'" + next_event[0]+"\' in " + str((next_event[1] - now)/1000) + " seconds")
+            except:
+                print("[" + ca + "] No further events scheduled.")
+                # Just for debugging, remove soon and replace with handling empty calendars
+                return
 
             # 1 day has 86400 seconds, so it should be 86400 * 1000 (for milliseconds) and this * days to fetch the plan every two days (or later if needed)  
         if now - last_fetched > (86400000*days):
@@ -127,17 +134,22 @@ def loop(ca, cam):
                 days = 2
                 last_fetched = now
                 events = sorted(events, key=lambda x: x[1], reverse=True)
-                next_event = events.pop()
-                print("Next Planned Event is \'" + next_event[0]+"\' in " + str((next_event[1] - now)/1000) + " seconds")
+                try:
+                    next_event = events.pop()
+                    print("[" + ca + "] Next Planned Event is \'" + next_event[0]+"\' in " + str((next_event[1] - now)/1000) + " seconds")
+                except IndexError:
+                    print("No further events scheduled")
+                    # Just for debugging, remove soon and replace with handling empty calendars
+                    return
             else:
-                print("Fetching the calendar returned something else than Code 200; Response: ", response)
+                print("[" + ca + "] Fetching the calendar returned something else than Code 200; Response: ", response)
 
                 # Try fetching again in 12 hours 
                 days += 0.5
 
                 if days == 6:
                     # If the plan could not be fetched in the last 5.5 days, print a warining because there might be some bigger error 
-                    print("[WARNING] The calendar coudn't be fetched in the last 5 days. Will try again tomorrow.")
+                    print("[" + ca + "] >>>WARNING<<< The calendar coudn't be fetched in the last 5 days. Will try again tomorrow.")
         time.sleep(1.0)
 
 def main():
@@ -147,8 +159,8 @@ def main():
     threads = list()
     for ca in list(agents.keys()):
         cam = agents[ca]
-        print(ca, cam)
-        x = threading.Thread(target=loop(ca, cam))
+        print("[MAIN] Starting Thread for ", ca ," @ ", cam)
+        x = threading.Thread(target=loop, args=(ca, cam))
         threads.append(x)
         x.start()
     
