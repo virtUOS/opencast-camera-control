@@ -18,33 +18,33 @@ def getCutoff():
 # Works fine for now
 # TODO: test for all possible presets 
 def setPreset(preset, camera, manufacturer, verbose=False):
-    if 0 <= preset and preset < 101:
-        if preset < 10:
-            preset = "0" + str(preset)
-    else:
-        print("Could not use the specified preset number, because it is out of range.\nThe Range is from 0 to 100 (including borders)")
-        return
-
-    print(camera, manufacturer)
     code = -1    
-    if manufacturer == "panasonic":
-        print("PANASONIC")
-        url = camera + '/cgi-bin/aw_ptz?cmd=%23R' + str(preset) + '&res=1'
-        if verbose:
-            print("URL:" + url)
-        code = requests.get(url, auth=("<user>", "<password>"))
-    elif manufacturer == "sony":
-        print("SONY")
-        preset = int(preset)
-        preset += 1
-        # Presets start at 1 for Sony cameras
-        url = camera + '/command/presetposition.cgi?PresetCall=' + str(preset)
-        if verbose:
-            print("URL:" + url)
-        # TODO: This doesn't work so far and I don't know why. Getting response 401 
-        code = requests.get(url, auth=("<user>", "<password>"), headers={"referer": camera + "/index.html?lang=en"})
-        print(code)
-    return code
+    if 0 <= preset and preset < 101:
+        print(camera, manufacturer)
+        if manufacturer == "panasonic":
+            print("PANASONIC")
+            if preset < 10:
+                preset = "0" + str(preset)
+        
+            url = camera + '/cgi-bin/aw_ptz?cmd=%23R' + str(preset) + '&res=1'
+            if verbose:
+                print("URL:" + url)
+            code = requests.get(url, auth=("<user>", "<password>"))
+        elif manufacturer == "sony":
+            print("SONY")
+            preset = int(preset)
+            preset += 1
+            # Presets start at 1 for Sony cameras
+            url = camera + '/command/presetposition.cgi?PresetCall=' + str(preset)
+            if verbose:
+                print("URL:" + url)
+            # TODO: This doesn't work so far and I don't know why. Getting response 401 
+            code = requests.get(url, auth=("<user>", "<password>"), headers={"referer": camera + "/index.html?lang=en"})
+            print(code)
+        return code
+    else:
+            print("Could not use the specified preset number, because it is out of range.\nThe Range is from 0 to 100 (including borders)")
+            return
 
 def printPlanned(cal):
     events = []
