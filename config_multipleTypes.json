@@ -1,0 +1,18 @@
+{
+    "15-217-1":
+    {
+        "url": "http://camera-panasonic-15-217.virtuos.uni-osnabrueck.de",
+        "type": "panasonic"
+    },
+    "15-217-2":
+    { 
+        "url": "http://camera-2-panasonic-15-217.virtuos.uni-osnabrueck.de",
+        "type": "panasonic"
+    },
+    "15-217-3":
+    {
+        "url": "http://camera-sony-15-217.virtuos.uni-osnabrueck.de",
+        "type": "sony"
+    }
+
+}

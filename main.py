@@ -17,19 +17,33 @@ def getCutoff():
 
 # Works fine for now
 # TODO: test for all possible presets 
-def setPreset(preset, camera, verbose=False):
+def setPreset(preset, camera, manufacturer, verbose=False):
     if 0 <= preset and preset < 101:
         if preset < 10:
             preset = "0" + str(preset)
-        url = camera + '/cgi-bin/aw_ptz?cmd=%23R' + str(preset) + '&res=1'
-        if verbose:
-            print("URL:" + url)
     else:
         print("Could not use the specified preset number, because it is out of range.\nThe Range is from 0 to 100 (including borders)")
         return
-    
-    # TODO: Actually set preset with request method
-    code = requests.get(url, auth=("admin", "PASS"))
+
+    print(camera, manufacturer)
+    code = -1    
+    if manufacturer == "panasonic":
+        print("PANASONIC")
+        url = camera + '/cgi-bin/aw_ptz?cmd=%23R' + str(preset) + '&res=1'
+        if verbose:
+            print("URL:" + url)
+        code = requests.get(url, auth=("<user>", "<password>"))
+    elif manufacturer == "sony":
+        print("SONY")
+        preset = int(preset)
+        preset += 1
+        # Presets start at 1 for Sony cameras
+        url = camera + '/command/presetposition.cgi?PresetCall=' + str(preset)
+        if verbose:
+            print("URL:" + url)
+        # TODO: This doesn't work so far and I don't know why. Getting response 401 
+        code = requests.get(url, auth=("<user>", "<password>"), headers={"referer": camera + "/index.html?lang=en"})
+        print(code)
     return code
 
 def printPlanned(cal):
@@ -67,110 +81,120 @@ def loadConfig(filename):
         #print(type(agents), agents)
         return agents
 
-def loop(ca, cam):
+def loop(agentID, url, manufacturer):
     # Used for fetching the calendar every 2 days
     days = 2
-    # fetch planned recordings, events are just tuples of (name, start, end)
-    # calendar gets returned as well, probably don't need it after all
-    events, _, _ = getCalendar(ca, getCutoff())
-    last_fetched = int(dt.strptime(str(parse(str(dt.now()))),'%Y-%m-%d %H:%M:%S.%f').timestamp()) * 1000
-
-    # reverse so pop returns the next event
-    events = sorted(events, key=lambda x: x[1], reverse=True)
-    try:
-        next_event = events.pop()
-        now = int(dt.strptime(str(parse(str(dt.now()))),'%Y-%m-%d %H:%M:%S.%f').timestamp()) * 1000
-    except IndexError:
-        print("[" + ca + "] No further events scheduled.")
-        # Just for debugging, remove soon and replace with handling empty calendars
-        return
-    except:
-        time.sleep(0.000001)
-        now = int(dt.strptime(str(parse(str(dt.now()))),'%Y-%m-%d %H:%M:%S.%f').timestamp()) * 1000
-
-    print("[" + ca + "] Next Planned Event is \'" + next_event[0]+"\' in " + str((next_event[1] - now)/1000) + " seconds")
-
-    # Somewhere in this loop, I have to fetch the next events
+    # Two nested while True loops so I can break out of the inner one if no further events are scheduled
     while True:
-        try:
-            now = int(dt.strptime(str(parse(str(dt.now()))),'%Y-%m-%d %H:%M:%S.%f').timestamp()) * 1000
-        except:
-            time.sleep(0.000001)
-            now = int(dt.strptime(str(parse(str(dt.now()))),'%Y-%m-%d %H:%M:%S.%f').timestamp()) * 1000
+        events, _, _ = getCalendar(agentID, getCutoff())
 
-        if (next_event[1] - now)/1000 == 3:
-            print("[" + ca + "] 3...")
-        elif (next_event[1] - now)/1000 == 2:
-            print("[" + ca + "] 2...")
-        elif (next_event[1] - now)/1000 == 1:
-            print("[" + ca + "] 1...")
+        #print(len(events))
+        if len(events) != 0:
 
+            last_fetched = int(dt.strptime(str(parse(str(dt.now()))),'%Y-%m-%d %H:%M:%S.%f').timestamp()) * 1000
 
-        if now == next_event[1]:
-            print("[" + ca + "] Event \'" + next_event[0] + "\' has started!")
-
-            # Move to recording preset
-            print("[" + ca + "] Move to Preset 1 for recording...")
-            _ = setPreset(1, cam)
-        elif now == next_event[2]:
-            print("[" + ca + "] Event \'" + next_event[0] + "\' has ended!")
-
-            # Return to home preset
-            print("[" + ca + "] Return to Preset \'Home\'...")
-            _ = setPreset(0, cam)
+            # reverse so pop returns the next event
+            events = sorted(events, key=lambda x: x[1], reverse=True)
             try:
                 next_event = events.pop()
-                print("[" + ca + "] Next Planned Event is \'" + next_event[0]+"\' in " + str((next_event[1] - now)/1000) + " seconds")
+                now = int(dt.strptime(str(parse(str(dt.now()))),'%Y-%m-%d %H:%M:%S.%f').timestamp()) * 1000
+                print("[" + agentID + "] Next Planned Event is \'" + next_event[0]+"\' in " + str((next_event[1] - now)/1000) + " seconds")
+            except IndexError:
+                print("[" + agentID + "] Currently no further events scheduled, will check again in 10 minutes...")
+                # This case should never happen because I check that before
             except:
-                print("[" + ca + "] No further events scheduled.")
-                # Just for debugging, remove soon and replace with handling empty calendars
-                return
+                time.sleep(0.000001)
+                now = int(dt.strptime(str(parse(str(dt.now()))),'%Y-%m-%d %H:%M:%S.%f').timestamp()) * 1000
+                print("[" + agentID + "] Next Planned Event is \'" + next_event[0]+"\' in " + str((next_event[1] - now)/1000) + " seconds")
 
-            # 1 day has 86400 seconds, so it should be 86400 * 1000 (for milliseconds) and this * days to fetch the plan every two days (or later if needed)  
-        if now - last_fetched > (86400000*days):
-            print(now, last_fetched, now-last_fetched)
-            events, response, _ = getCalendar(ca, getCutoff())
-            if int(response) == 200:
-                days = 2
-                last_fetched = now
-                events = sorted(events, key=lambda x: x[1], reverse=True)
+            while True:
                 try:
-                    next_event = events.pop()
-                    print("[" + ca + "] Next Planned Event is \'" + next_event[0]+"\' in " + str((next_event[1] - now)/1000) + " seconds")
-                except IndexError:
-                    print("No further events scheduled")
-                    # Just for debugging, remove soon and replace with handling empty calendars
-                    return
-            else:
-                print("[" + ca + "] Fetching the calendar returned something else than Code 200; Response: ", response)
+                    now = int(dt.strptime(str(parse(str(dt.now()))),'%Y-%m-%d %H:%M:%S.%f').timestamp()) * 1000
+                except:
+                    time.sleep(0.000001)
+                    now = int(dt.strptime(str(parse(str(dt.now()))),'%Y-%m-%d %H:%M:%S.%f').timestamp()) * 1000
 
-                # Try fetching again in 12 hours 
-                days += 0.5
+                if (next_event[1] - now)/1000 == 3:
+                    print("[" + agentID + "] 3...")
+                elif (next_event[1] - now)/1000 == 2:
+                    print("[" + agentID + "] 2...")
+                elif (next_event[1] - now)/1000 == 1:
+                    print("[" + agentID + "] 1...")
 
-                if days == 6:
-                    # If the plan could not be fetched in the last 5.5 days, print a warining because there might be some bigger error 
-                    print("[" + ca + "] >>>WARNING<<< The calendar coudn't be fetched in the last 5 days. Will try again tomorrow.")
-        time.sleep(1.0)
+
+                if now == next_event[1]:
+                    print("[" + agentID + "] Event \'" + next_event[0] + "\' has started!")
+
+                    # Move to recording preset
+                    print("[" + agentID + "] Move to Preset 1 for recording...")
+                    _ = setPreset(1, url, manufacturer, True)
+                elif now == next_event[2]:
+                    print("[" + agentID + "] Event \'" + next_event[0] + "\' has ended!")
+
+                    # Return to home preset
+                    print("[" + agentID + "] Return to Preset \'Home\'...")
+                    _ = setPreset(0, url, manufacturer, True)
+                    try:
+                        next_event = events.pop()
+                        print("[" + agentID + "] Next Planned Event is \'" + next_event[0]+"\' in " + str((next_event[1] - now)/1000) + " seconds")
+                    except:
+                        print("[" + agentID + "] Currently no further events scheduled, will check again in 10 minutes...")
+                        # Just for debugging, remove soon and replace with handling empty calendars
+                        break
+
+                    # 1 day has 86400 seconds, so it should be 86400 * 1000 (for milliseconds) and this * days to fetch the plan every two days (or later if needed)  
+                if now - last_fetched > (86400000*days):
+                    print(now, last_fetched, now-last_fetched)
+                    events, response, _ = getCalendar(agentID, getCutoff())
+                    if int(response) == 200:
+                        days = 0.5
+                        last_fetched = now
+                        events = sorted(events, key=lambda x: x[1], reverse=True)
+                        try:
+                            next_event = events.pop()
+                            print("[" + agentID + "] Next Planned Event is \'" + next_event[0]+"\' in " + str((next_event[1] - now)/1000) + " seconds")
+                        except IndexError:
+                            print("[" + agentID + "] Currently no further events scheduled, will check again in 10 minutes...")
+                            # Just for debugging, remove soon and replace with handling empty calendars
+                            #return
+                            break
+                    else:
+                        print("[" + agentID + "] Fetching the calendar returned something else than Code 200; Response: ", response)
+
+                        # Try fetching again in 12 hours 
+                        days += 0.5
+
+                    if days == 6:
+                        # If the plan could not be fetched in the last 5.5 days, print a warining because there might be some bigger error 
+                        print("[" + agentID + "] >>>WARNING<<< The calendar coudn't be fetched in the last 5 days. Will try again tomorrow.")
+                time.sleep(1.0)
+        else:
+            print("[" + agentID + "] Currently no further events scheduled, will check again in 10 minutes...")
+            time.sleep(600)
+    
+
 
 def main():
-    agents = loadConfig("./config.json")
+    cameras = loadConfig("./config_multipleTypes.json")
+
+    for agentID in cameras.keys():
+        print(cameras[agentID])
 
 
     threads = list()
-    for ca in list(agents.keys()):
-        cam = agents[ca]
-        print("[MAIN] Starting Thread for ", ca ," @ ", cam)
-        x = threading.Thread(target=loop, args=(ca, cam))
+    for agentID in list(cameras.keys()):
+        url, manufacturer = cameras[agentID].values()
+
+        print(agentID, url, manufacturer)
+
+        print("Starting Thread for ", agentID ," @ ", url)
+        x = threading.Thread(target=loop, args=(agentID, url, manufacturer))
         threads.append(x)
         x.start()
     
+    # Don't need that I think. Should implement restarting of a thread if function fails for some reason
     for index, thread in enumerate(threads):
         thread.join()
-    
-    # Set preset to the according number [0, 100]
-    # Also set the camera when the recording should be started
-    # curl -i --max-time 5 -u 'admin:PASS' 'http://camera-42-209.virtuos.uni-osnabrueck.de/cgi-bin/aw_ptz?cmd=%23R< Preset_No >&res=1'
-    # --> Done with setPreset, but the max-time arg is not passed yet
 
 
 if __name__ == "__main__":
