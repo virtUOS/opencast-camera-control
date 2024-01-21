@@ -1,0 +1,37 @@
+opencast:
+  # Opencast server to talk to
+  server: https://develop.opencast.org
+
+  # Username of an Opencast user which can authenticate itself via HTTP Basic
+  # authentication and which has access to the capture agents calendars.
+  username: admin
+
+  # Password of the specified Opencast user
+  password: opencast
+
+calendar:
+  # The frequency in which the calendar should be updated
+  update_frequency: 60
+
+# Camera Configuration
+# Configure the capture agents to get the calendar for and a list of cameras to
+# control when a capture agent starts.
+#
+# The format of this configuration is:
+# <capture-agent-name>:
+#   - url: http://url.to.first.camera.interface
+#     type: `panasonic` or `sony`
+#     user: username to access the API (optional)
+#     password: password to access the API (optional)
+camera:
+  15-217-1:
+    - url: http://camera-panasonic-15-217.virtuos.uni-osnabrueck.de
+      type: panasonic
+      user: admin
+      password: admin
+  15-217-2:
+    - url: http://camera-2-panasonic-15-217.virtuos.uni-osnabrueck.de
+      type: panasonic
+  15-217-3:
+    - url: http://camera-sony-15-217.virtuos.uni-osnabrueck.de
+      type: sony
