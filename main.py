@@ -196,7 +196,7 @@ def main():
         x.start()
 
     # Don't need that I think. Should implement restarting of a thread if function fails for some reason
-    for index, thread in enumerate(threads):
+    for thread in threads:
         thread.join()
 
 
