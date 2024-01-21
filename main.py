@@ -94,88 +94,88 @@ def loop(agentID, url, manufacturer):
     while True:
         events, _, _ = getCalendar(agentID, getCutoff())
 
-        #print(len(events))
-        if len(events) != 0:
+        # Skip if there are no events
+        if len(events) == 0:
+            print("[" + agentID + "] Currently no further events scheduled, will check again in 10 minutes...")
+            time.sleep(600)
+            continue
 
-            last_fetched = int(dt.strptime(str(parse(str(dt.now()))), '%Y-%m-%d %H:%M:%S.%f').timestamp()) * 1000
+        last_fetched = int(dt.strptime(str(parse(str(dt.now()))), '%Y-%m-%d %H:%M:%S.%f').timestamp()) * 1000
 
-            # reverse so pop returns the next event
-            events = sorted(events, key=lambda x: x[1], reverse=True)
+        # reverse so pop returns the next event
+        events = sorted(events, key=lambda x: x[1], reverse=True)
+        try:
+            next_event = events.pop()
+            now = int(dt.strptime(str(parse(str(dt.now()))), '%Y-%m-%d %H:%M:%S.%f').timestamp()) * 1000
+            print("[" + agentID + "] Next Planned Event is \'" + next_event[0]+"\' in " + str((next_event[1] - now)/1000) + " seconds")
+        except IndexError:
+            print("[" + agentID + "] Currently no further events scheduled, will check again in 10 minutes...")
+            # This case should never happen because I check that before
+        except Exception:
+            time.sleep(0.000001)
+            now = int(dt.strptime(str(parse(str(dt.now()))), '%Y-%m-%d %H:%M:%S.%f').timestamp()) * 1000
+            print("[" + agentID + "] Next Planned Event is \'" + next_event[0]+"\' in " + str((next_event[1] - now)/1000) + " seconds")
+
+        while True:
             try:
-                next_event = events.pop()
                 now = int(dt.strptime(str(parse(str(dt.now()))), '%Y-%m-%d %H:%M:%S.%f').timestamp()) * 1000
-                print("[" + agentID + "] Next Planned Event is \'" + next_event[0]+"\' in " + str((next_event[1] - now)/1000) + " seconds")
-            except IndexError:
-                print("[" + agentID + "] Currently no further events scheduled, will check again in 10 minutes...")
-                # This case should never happen because I check that before
             except Exception:
                 time.sleep(0.000001)
                 now = int(dt.strptime(str(parse(str(dt.now()))), '%Y-%m-%d %H:%M:%S.%f').timestamp()) * 1000
-                print("[" + agentID + "] Next Planned Event is \'" + next_event[0]+"\' in " + str((next_event[1] - now)/1000) + " seconds")
 
-            while True:
+            if (next_event[1] - now)/1000 == 3:
+                print("[" + agentID + "] 3...")
+            elif (next_event[1] - now)/1000 == 2:
+                print("[" + agentID + "] 2...")
+            elif (next_event[1] - now)/1000 == 1:
+                print("[" + agentID + "] 1...")
+
+            if now == next_event[1]:
+                print("[" + agentID + "] Event \'" + next_event[0] + "\' has started!")
+
+                # Move to recording preset
+                print("[" + agentID + "] Move to Preset 1 for recording...")
+                _ = setPreset(1, url, manufacturer, True)
+            elif now == next_event[2]:
+                print("[" + agentID + "] Event \'" + next_event[0] + "\' has ended!")
+
+                # Return to home preset
+                print("[" + agentID + "] Return to Preset \'Home\'...")
+                _ = setPreset(0, url, manufacturer, True)
                 try:
-                    now = int(dt.strptime(str(parse(str(dt.now()))), '%Y-%m-%d %H:%M:%S.%f').timestamp()) * 1000
+                    next_event = events.pop()
+                    print("[" + agentID + "] Next Planned Event is \'" + next_event[0]+"\' in " + str((next_event[1] - now)/1000) + " seconds")
                 except Exception:
-                    time.sleep(0.000001)
-                    now = int(dt.strptime(str(parse(str(dt.now()))), '%Y-%m-%d %H:%M:%S.%f').timestamp()) * 1000
+                    print("[" + agentID + "] Currently no further events scheduled, will check again in 10 minutes...")
+                    # Just for debugging, remove soon and replace with handling empty calendars
+                    break
 
-                if (next_event[1] - now)/1000 == 3:
-                    print("[" + agentID + "] 3...")
-                elif (next_event[1] - now)/1000 == 2:
-                    print("[" + agentID + "] 2...")
-                elif (next_event[1] - now)/1000 == 1:
-                    print("[" + agentID + "] 1...")
-
-                if now == next_event[1]:
-                    print("[" + agentID + "] Event \'" + next_event[0] + "\' has started!")
-
-                    # Move to recording preset
-                    print("[" + agentID + "] Move to Preset 1 for recording...")
-                    _ = setPreset(1, url, manufacturer, True)
-                elif now == next_event[2]:
-                    print("[" + agentID + "] Event \'" + next_event[0] + "\' has ended!")
-
-                    # Return to home preset
-                    print("[" + agentID + "] Return to Preset \'Home\'...")
-                    _ = setPreset(0, url, manufacturer, True)
+                # 1 day has 86400 seconds, so it should be 86400 * 1000 (for milliseconds) and this * days to fetch the plan every two days (or later if needed)
+            if now - last_fetched > (86400000*days):
+                print(now, last_fetched, now-last_fetched)
+                events, response, _ = getCalendar(agentID, getCutoff())
+                if int(response) == 200:
+                    days = 0.5
+                    last_fetched = now
+                    events = sorted(events, key=lambda x: x[1], reverse=True)
                     try:
                         next_event = events.pop()
                         print("[" + agentID + "] Next Planned Event is \'" + next_event[0]+"\' in " + str((next_event[1] - now)/1000) + " seconds")
-                    except Exception:
+                    except IndexError:
                         print("[" + agentID + "] Currently no further events scheduled, will check again in 10 minutes...")
                         # Just for debugging, remove soon and replace with handling empty calendars
+                        # return
                         break
+                else:
+                    print("[" + agentID + "] Fetching the calendar returned something else than Code 200; Response: ", response)
 
-                    # 1 day has 86400 seconds, so it should be 86400 * 1000 (for milliseconds) and this * days to fetch the plan every two days (or later if needed)
-                if now - last_fetched > (86400000*days):
-                    print(now, last_fetched, now-last_fetched)
-                    events, response, _ = getCalendar(agentID, getCutoff())
-                    if int(response) == 200:
-                        days = 0.5
-                        last_fetched = now
-                        events = sorted(events, key=lambda x: x[1], reverse=True)
-                        try:
-                            next_event = events.pop()
-                            print("[" + agentID + "] Next Planned Event is \'" + next_event[0]+"\' in " + str((next_event[1] - now)/1000) + " seconds")
-                        except IndexError:
-                            print("[" + agentID + "] Currently no further events scheduled, will check again in 10 minutes...")
-                            # Just for debugging, remove soon and replace with handling empty calendars
-                            # return
-                            break
-                    else:
-                        print("[" + agentID + "] Fetching the calendar returned something else than Code 200; Response: ", response)
+                    # Try fetching again in 12 hours
+                    days += 0.5
 
-                        # Try fetching again in 12 hours
-                        days += 0.5
-
-                    if days == 6:
-                        # If the plan could not be fetched in the last 5.5 days, print a warining because there might be some bigger error
-                        print("[" + agentID + "] >>>WARNING<<< The calendar coudn't be fetched in the last 5 days. Will try again tomorrow.")
-                time.sleep(1.0)
-        else:
-            print("[" + agentID + "] Currently no further events scheduled, will check again in 10 minutes...")
-            time.sleep(600)
+                if days == 6:
+                    # If the plan could not be fetched in the last 5.5 days, print a warining because there might be some bigger error
+                    print("[" + agentID + "] >>>WARNING<<< The calendar coudn't be fetched in the last 5 days. Will try again tomorrow.")
+            time.sleep(1.0)
 
 
 def main():
