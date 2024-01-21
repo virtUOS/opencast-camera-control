@@ -1,9 +1,11 @@
 import requests
 import json
 import time
+import threading
+
 from dateutil.parser import parse
 from datetime import datetime as dt
-import threading
+from requests.auth import HTTPDigestAuth
 
 # Use command createCA for creation of capture agent. Has to be done daily.
 
@@ -22,6 +24,7 @@ def getCutoff():
 def setPreset(preset, camera, manufacturer, verbose=False):
     code = -1
     if 0 <= preset and preset < 101:
+        camera = camera.rstrip('/')
         print(camera, manufacturer)
         if manufacturer == "panasonic":
             print("PANASONIC")
@@ -34,14 +37,14 @@ def setPreset(preset, camera, manufacturer, verbose=False):
             code = requests.get(url, auth=("<user>", "<password>"))
         elif manufacturer == "sony":
             print("SONY")
-            preset = int(preset)
-            preset += 1
             # Presets start at 1 for Sony cameras
-            url = camera + '/command/presetposition.cgi?PresetCall=' + str(preset)
+            url = f'{camera}/command/presetposition.cgi'
+            params = {'PresetCall': preset}
+            auth = HTTPDigestAuth('<user>', '<password>')
+            headers = {'referer': f'{camera}/'}
             if verbose:
                 print("URL:" + url)
-            # TODO: This doesn't work so far and I don't know why. Getting response 401
-            code = requests.get(url, auth=("<user>", "<password>"), headers={"referer": camera + "/index.html?lang=en"})
+            code = requests.get(url, auth=auth, headers=headers, params=params)
             print(code)
         return code
     else:
