@@ -113,28 +113,28 @@ def loop(agentID, url, manufacturer):
         #print(len(events))
         if len(events) != 0:
 
-            last_fetched = int(dt.strptime(str(parse(str(dt.now()))), '%Y-%m-%d %H:%M:%S.%f').timestamp()) * 1000
+            last_fetched = int(time.time()) * 1000
 
             # reverse so pop returns the next event
             events = sorted(events, key=lambda x: x[1], reverse=True)
             try:
                 next_event = events.pop()
-                now = int(dt.strptime(str(parse(str(dt.now()))), '%Y-%m-%d %H:%M:%S.%f').timestamp()) * 1000
+                now = int(time.time()) * 1000
                 print("[" + agentID + "] Next Planned Event is \'" + next_event[0]+"\' in " + str((next_event[1] - now)/1000) + " seconds")
             except IndexError:
                 print("[" + agentID + "] Currently no further events scheduled, will check again in 10 minutes...")
                 # This case should never happen because I check that before
             except Exception:
                 time.sleep(0.000001)
-                now = int(dt.strptime(str(parse(str(dt.now()))), '%Y-%m-%d %H:%M:%S.%f').timestamp()) * 1000
+                now = int(time.time()) * 1000
                 print("[" + agentID + "] Next Planned Event is \'" + next_event[0]+"\' in " + str((next_event[1] - now)/1000) + " seconds")
 
             while True:
                 try:
-                    now = int(dt.strptime(str(parse(str(dt.now()))), '%Y-%m-%d %H:%M:%S.%f').timestamp()) * 1000
+                    now = int(time.time()) * 1000
                 except Exception:
                     time.sleep(0.000001)
-                    now = int(dt.strptime(str(parse(str(dt.now()))), '%Y-%m-%d %H:%M:%S.%f').timestamp()) * 1000
+                    now = int(time.time()) * 1000
 
                 if (next_event[1] - now)/1000 == 3:
                     print("[" + agentID + "] 3...")
