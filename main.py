@@ -41,13 +41,12 @@ def setPreset(preset, camera, manufacturer, verbose=False):
         print(camera, manufacturer)
         if manufacturer == "panasonic":
             print("PANASONIC")
-            if preset < 10:
-                preset = "0" + str(preset)
-
-            url = camera + '/cgi-bin/aw_ptz?cmd=%23R' + str(preset) + '&res=1'
+            params = {'cmd': f'#R{preset - 1:02}', 'res': 1}
+            url = f'{camera}/cgi-bin/aw_ptz'
+            auth = ('<user>', '<password>')
             if verbose:
                 print("URL:" + url)
-            code = requests.get(url, auth=("<user>", "<password>"))
+            code = requests.get(url, auth=auth, params=params)
         elif manufacturer == "sony":
             print("SONY")
             preset = int(preset)
