@@ -14,11 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import argparse
 import requests
 import json
 import time
 import threading
 
+from confygure import setup, config
 from dateutil.parser import parse
 from datetime import datetime as dt
 from requests.auth import HTTPDigestAuth
@@ -85,10 +87,13 @@ def printPlanned(cal):
 
 
 def getCalendar(agentId, cutoff, verbose=False):
-    url = "https://develop.opencast.org/recordings/calendar.json?agentid=" + str(agentId) + "&cutoff=" + str(cutoff)
+    server = config('opencast', 'server').rstrip('/')
+    auth = (config('opencast', 'username'), config('opencast', 'password'))
+    url = f'{server}/recordings/calendar.json'
+    params = {'agentid': agentId, 'cutoff': cutoff}
     print("[" + agentId + "] REQUEST:", url)
 
-    calendar = requests.get(url, auth=("admin", "opencast"))
+    calendar = requests.get(url, auth=auth, params=params)
     if verbose:
         print("STATUS:", calendar.status_code)
         print("JSON:", calendar.json())
@@ -96,13 +101,6 @@ def getCalendar(agentId, cutoff, verbose=False):
     events = printPlanned(calendar.json())
 
     return events, calendar.status_code, calendar
-
-
-def loadConfig(filename):
-    with open(filename, "r") as file:
-        agents = json.load(file)
-        #print(type(agents), agents)
-        return agents
 
 
 def loop(agentID, url, manufacturer):
@@ -197,21 +195,43 @@ def loop(agentID, url, manufacturer):
 
 
 def main():
-    cameras = loadConfig("./config_multipleTypes.json")
+    parser = argparse.ArgumentParser(description='Opencast Camera Control')
+    parser.add_argument(
+        '-c', '--config',
+        type=str,
+        default=None,
+        help='Path to a configuration file'
+    )
+    args = parser.parse_args()
+    config_files = (
+            './camera-control.yml',
+            '~/camera-control.yml',
+            '/etc/camera-control.yml')
+    if args.config:
+        config_files = (args.config,)
 
+    setup(files=config_files, logger=('loglevel'))
+
+    cameras = config('camera')
+    print(cameras)
     for agentID in cameras.keys():
-        print(cameras[agentID])
+        print(agentID)
+        for camera in cameras[agentID]:
+            print(f'- {camera["url"]}')
+            print(f'  {camera["type"]}')
 
     threads = list()
-    for agentID in list(cameras.keys()):
-        url, manufacturer = cameras[agentID].values()
+    for agentID, agent_cameras in cameras.items():
+        for camera in agent_cameras:
+            url = camera['url']
+            manufacturer = camera['type']
 
-        print(agentID, url, manufacturer)
+            print(agentID, url, manufacturer)
 
-        print("Starting Thread for ", agentID, " @ ", url)
-        x = threading.Thread(target=loop, args=(agentID, url, manufacturer))
-        threads.append(x)
-        x.start()
+            print("Starting Thread for ", agentID, " @ ", url)
+            x = threading.Thread(target=loop, args=(agentID, url, manufacturer))
+            threads.append(x)
+            x.start()
 
     # Don't need that I think. Should implement restarting of a thread if function fails for some reason
     for thread in threads:
