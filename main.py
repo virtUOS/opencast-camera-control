@@ -41,10 +41,10 @@ def getCutoff():
 # TODO: test for all possible presets
 def setPreset(preset, camera, manufacturer, verbose=False):
     code = -1
-    if 0 <= preset and preset < 101:
-        camera = camera.rstrip('/')
-        print(camera, manufacturer)
-        if manufacturer == "panasonic":
+    camera = camera.rstrip('/')
+    print(camera, manufacturer)
+    if manufacturer == "panasonic":
+        if 0 <= preset <= 100:
             print("PANASONIC")
             params = {'cmd': f'#R{preset - 1:02}', 'res': 1}
             url = f'{camera}/cgi-bin/aw_ptz'
@@ -52,7 +52,12 @@ def setPreset(preset, camera, manufacturer, verbose=False):
             if verbose:
                 print("URL:" + url)
             code = requests.get(url, auth=auth, params=params)
-        elif manufacturer == "sony":
+
+        else:
+            print("Could not use the specified preset number, because it is out of range.\nThe Range is from 0 to 100 (including borders)")
+            return code
+    elif manufacturer == "sony":
+        if 1 <= preset <= 10:
             print("SONY")
             # Presets start at 1 for Sony cameras
             url = f'{camera}/command/presetposition.cgi'
@@ -65,8 +70,8 @@ def setPreset(preset, camera, manufacturer, verbose=False):
             print(code)
         return code
     else:
-        print("Could not use the specified preset number, because it is out of range.\nThe Range is from 0 to 100 (including borders)")
-        return
+        print("Could not use the specified preset number, because it is out of range.\nThe Range is from 1 to 10 (including borders)")
+        return code
 
 
 def printPlanned(cal):
