@@ -10,8 +10,8 @@ opencast:
   password: opencast
 
 calendar:
-  # The frequency in which the calendar should be updated
-  update_frequency: 60
+  # The frequency in which the calendar should be updated in seconds
+  update_frequency: 120
 
 # Camera Configuration
 # Configure the capture agents to get the calendar for and a list of cameras to
