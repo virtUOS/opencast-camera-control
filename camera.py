@@ -50,4 +50,8 @@ class camera:
 
         else:
             print("Unknown Camera Type \'%s\'.\nKnown Types are \'panasonis\' and \'sony\'." % self.manufacturer)
+
+
+        if code == 200:
+            self.pos = preset
         return code

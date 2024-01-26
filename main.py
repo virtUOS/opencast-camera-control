@@ -18,6 +18,7 @@ import argparse
 import requests
 import time
 import threading
+import camera as cam
 
 from confygure import setup, config
 from dateutil.parser import parse
@@ -31,44 +32,6 @@ from requests.auth import HTTPDigestAuth
 def getCutoff():
     # calculate the offset of now + 1 week
     return (int(time.time()) + 7*24*60*60)*1000
-
-
-# Works fine for now
-# TODO: test for all possible presets
-def setPreset(preset, camera, manufacturer, verbose=False):
-    code = -1
-    camera = camera.rstrip('/')
-    print(camera, manufacturer)
-    if manufacturer == "panasonic":
-        if 0 <= preset <= 100:
-            print("PANASONIC")
-            params = {'cmd': f'#R{preset - 1:02}', 'res': 1}
-            url = f'{camera}/cgi-bin/aw_ptz'
-            auth = ('<user>', '<password>')
-            if verbose:
-                print("URL:" + url)
-            code = requests.get(url, auth=auth, params=params)
-
-        else:
-            print("Could not use the specified preset number, because it is out of range.\nThe Range is from 0 to 100 (including borders)")
-            return code
-    elif manufacturer == "sony":
-        if 1 <= preset <= 10:
-            print("SONY")
-            # Presets start at 1 for Sony cameras
-            url = f'{camera}/command/presetposition.cgi'
-            params = {'PresetCall': preset}
-            auth = HTTPDigestAuth('<user>', '<password>')
-            headers = {'referer': f'{camera}/'}
-            if verbose:
-                print("URL:" + url)
-            code = requests.get(url, auth=auth, headers=headers, params=params)
-            print(code)
-        return code
-    else:
-        print("Could not use the specified preset number, because it is out of range.\nThe Range is from 1 to 10 (including borders)")
-        return code
-
 
 def printPlanned(cal):
     events = []
@@ -103,8 +66,10 @@ def getCalendar(agentId, cutoff, verbose=False):
 
     return events, calendar.status_code, calendar
 
+def calendar_loop(cameras: list):
+    pass
 
-def loop(agentID, url, manufacturer):
+def camera_loop(camera: cam.camera):
     # Currently known camera position
     position = -1
 
@@ -112,7 +77,7 @@ def loop(agentID, url, manufacturer):
     while True:
         # Update calendar
         if time.time() - last_updated > config('calendar', 'update_frequency'):
-            events, _, _ = getCalendar(agentID, getCutoff())
+            events, _, _ = getCalendar(camera.ID, getCutoff())
             # reverse sort, so pop returns the next event
             events = sorted(events, key=lambda x: x[1], reverse=True)
             last_updated = time.time()
@@ -124,35 +89,33 @@ def loop(agentID, url, manufacturer):
         # Set start end end to 0 if there is no event
         title, start, end = events[0] if events else ('', 0, 0)
         if now < start < end:
-            print("[" + agentID + "] Next planned event is \'" + title+"\' in " + str((start - now)/1000) + " seconds")
+            print("[" + camera.ID + "] Next planned event is \'" + title+"\' in " + str((start - now)/1000) + " seconds")
         elif start <= now < end:
-            print("[" + agentID + "] Active events \'" + title+"\' ends in " + str((end - now)/1000) + " seconds")
+            print("[" + camera.ID + "] Active events \'" + title+"\' ends in " + str((end - now)/1000) + " seconds")
         else:
-            print("[" + agentID + "] No planned events")
+            print("[" + camera.ID + "] No planned events")
 
         if (start - now)/1000 == 3:
-            print("[" + agentID + "] 3...")
+            print("[" + camera.ID + "] 3...")
         elif (start - now)/1000 == 2:
-            print("[" + agentID + "] 2...")
+            print("[" + camera.ID + "] 2...")
         elif (start - now)/1000 == 1:
-            print("[" + agentID + "] 1...")
+            print("[" + camera.ID + "] 1...")
 
         if start <= now < end:
             # TODO: Preset numbers should not be hard-coded
-            if position != 1:
-                print("[" + agentID + "] Event \'" + title + "\' has started!")
+            if camera.pos != 1:
+                print("[" + camera.ID + "] Event \'" + title + "\' has started!")
                 # Move to recording preset
-                print("[" + agentID + "] Move to Preset 1 for recording...")
-                setPreset(1, url, manufacturer, True)
-                position = 1
+                print("[" + camera.ID + "] Move to Preset 1 for recording...")
+                camera.setPreset(1, True)
 
         else:  # No active event
-            if position != 10:
+            if camera.pos != 10:
                 # Return to netral preset
-                print("[" + agentID + "] Event \'" + title + "\' has ended!")
-                print("[" + agentID + "] Return to Preset \'Home\'...")
-                setPreset(10, url, manufacturer, True)
-                position = 10
+                print("[" + camera.ID + "] Event \'" + title + "\' has ended!")
+                print("[" + camera.ID + "] Return to Preset \'Home\'...")
+                camera.setPreset(10, True)
 
         time.sleep(1)
 
@@ -176,25 +139,31 @@ def main():
     setup(files=config_files, logger=('loglevel'))
 
     cameras = config('camera')
-    print(cameras)
     for agentID in cameras.keys():
         print(agentID)
         for camera in cameras[agentID]:
             print(f'- {camera["url"]}')
             print(f'  {camera["type"]}')
 
-    threads = list()
+    cameras_list = list()
     for agentID, agent_cameras in cameras.items():
         for camera in agent_cameras:
-            url = camera['url']
-            manufacturer = camera['type']
+            c = cam.camera(agentID, camera['url'], camera['type'], "", 10, 0)
+            c.updateCalendar(getCalendar(c.ID, getCutoff()))
+            cameras_list.append(c)
 
-            print(agentID, url, manufacturer)
+    for c in cameras_list:
+        print(c)
 
-            print("Starting Thread for ", agentID, " @ ", url)
-            x = threading.Thread(target=loop, args=(agentID, url, manufacturer))
-            threads.append(x)
-            x.start()
+    # TODO Create a list / dict of cameras
+    threads = list()
+    for camera in cameras_list:
+        print(camera.ID, camera.url, camera.manufacturer)
+
+        print("Starting Thread for ", camera.ID, " @ ", camera.url)
+        x = threading.Thread(target=camera_loop, args=(camera,))
+        threads.append(x)
+        x.start()
 
     # Don't need that I think. Should implement restarting of a thread if function fails for some reason
     try:
