@@ -201,8 +201,11 @@ def main():
             x.start()
 
     # Don't need that I think. Should implement restarting of a thread if function fails for some reason
-    for thread in threads:
-        thread.join()
+    try:
+        for thread in threads:
+            thread.join()
+    except KeyboardInterrupt:
+        pass
 
 
 if __name__ == "__main__":
