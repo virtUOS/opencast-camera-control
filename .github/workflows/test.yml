@@ -1,0 +1,33 @@
+name: run flake8
+
+on:
+  push:
+    branches-ignore:
+      - 'dependabot/**'
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # https://endoflife.date/python
+        # https://github.com/actions/runner-images/blob/main/images/linux/Ubuntu2204-Readme.md#python
+        python-version:
+          - '3.9'
+          - '3.10'
+          - '3.11'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: set up python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - run: pip install -r requirements.txt
+
+    - run: pip install flake8
+
+    - run: flake8 --max-line-length 140 *.py

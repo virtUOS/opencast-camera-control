@@ -1,2 +1,2 @@
-confygure
+confygure >= 0.0.3
 requests

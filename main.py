@@ -16,7 +16,6 @@
 
 import argparse
 import requests
-import json
 import time
 import threading
 
@@ -31,10 +30,7 @@ from requests.auth import HTTPDigestAuth
 # Works
 def getCutoff():
     # calculate the offset of now + 1 week
-    cutoff = (round(time.time()) + 7*24*60*60)*1000
-
-    #print("Cutoff =",cutoff)
-    return cutoff
+    return (int(time.time()) + 7*24*60*60)*1000
 
 
 # Works fine for now
