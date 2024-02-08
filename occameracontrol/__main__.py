@@ -25,7 +25,7 @@ from datetime import datetime as dt
 
 from occameracontrol.camera import Camera
 
-# Works
+
 def getCutoff():
     # calculate the offset of now + 1 week
     return (int(time.time()) + 7*24*60*60)*1000
