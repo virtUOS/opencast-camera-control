@@ -18,14 +18,12 @@ import argparse
 import requests
 import time
 import threading
-import camera as cam
 
 from confygure import setup, config
 from dateutil.parser import parse
 from datetime import datetime as dt
 
-# Use command createCA for creation of capture agent. Has to be done daily.
-
+from occameracontrol.camera import Camera
 
 # Works
 def getCutoff():
@@ -71,7 +69,7 @@ def calendar_loop(cameras: list):
     pass
 
 
-def camera_loop(camera: cam.camera):
+def camera_loop(camera: Camera):
     last_updated = 0
     while True:
         # Update calendar
@@ -137,32 +135,25 @@ def main():
 
     setup(files=config_files, logger=('loglevel'))
 
-    cameras = config('camera')
-    for agentID in cameras.keys():
+    cameras = []
+    for agentID, agent_cameras in config('camera').items():
         print(agentID)
-        for camera in cameras[agentID]:
+        for camera in agent_cameras:
             print(f'- {camera["url"]}')
             print(f'  {camera["type"]}')
-
-    cameras_list = list()
-    for agentID, agent_cameras in cameras.items():
-        for camera in agent_cameras:
-            c = cam.camera(agentID, camera['url'], camera['type'], "", 10, 0)
+            c = Camera(agentID, camera['url'], camera['type'], "", 10, 0)
             c.updateCalendar(getCalendar(c.ID, getCutoff()))
-            cameras_list.append(c)
-
-    for c in cameras_list:
-        print(c)
+            cameras.append(c)
 
     # TODO Create a list / dict of cameras
-    threads = list()
-    for camera in cameras_list:
+    threads = []
+    for camera in cameras:
         print(camera.ID, camera.url, camera.manufacturer)
 
         print("Starting Thread for ", camera.ID, " @ ", camera.url)
-        x = threading.Thread(target=camera_loop, args=(camera,))
-        threads.append(x)
-        x.start()
+        camera_control = threading.Thread(target=camera_loop, args=(camera,))
+        threads.append(camera_control)
+        camera_control.start()
 
     # Don't need that I think. Should implement restarting of a thread if function fails for some reason
     try:

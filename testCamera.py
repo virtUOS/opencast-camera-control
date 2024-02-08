@@ -1,16 +1,17 @@
-import camera
 import time
 
 from random import randint
 from math import sqrt
 
+from occameracontrol.camera import Camera
+
 # Just a very rudimentary testing script for some methods of the camera class
 
 
 # Initialization
-c1 = camera.camera("15-217-3", "http://camera-sony-15-217.virtuos.uni-osnabrueck.de", "sony", "", 3, 0)
-c2 = camera.camera("15-217-1", "http://camera-panasonic-15-217.virtuos.uni-osnabrueck.de", "panasonic", "", 10, 2)
-c3 = camera.camera("Test 3", "", "NOT A SUPPORTED CAMERA TYPE", "", 5, 8)
+c1 = Camera("15-217-3", "http://camera-sony-15-217.virtuos.uni-osnabrueck.de", "sony", "", 3, 0)
+c2 = Camera("15-217-1", "http://camera-panasonic-15-217.virtuos.uni-osnabrueck.de", "panasonic", "", 10, 2)
+c3 = Camera("Test 3", "", "NOT A SUPPORTED CAMERA TYPE", "", 5, 8)
 
 
 def getTestList(min, max):
