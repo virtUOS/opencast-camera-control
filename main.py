@@ -23,7 +23,6 @@ import camera as cam
 from confygure import setup, config
 from dateutil.parser import parse
 from datetime import datetime as dt
-from requests.auth import HTTPDigestAuth
 
 # Use command createCA for creation of capture agent. Has to be done daily.
 
@@ -32,6 +31,7 @@ from requests.auth import HTTPDigestAuth
 def getCutoff():
     # calculate the offset of now + 1 week
     return (int(time.time()) + 7*24*60*60)*1000
+
 
 def printPlanned(cal):
     events = []
@@ -66,13 +66,12 @@ def getCalendar(agentId, cutoff, verbose=False):
 
     return events, calendar.status_code, calendar
 
+
 def calendar_loop(cameras: list):
     pass
 
-def camera_loop(camera: cam.camera):
-    # Currently known camera position
-    position = -1
 
+def camera_loop(camera: cam.camera):
     last_updated = 0
     while True:
         # Update calendar

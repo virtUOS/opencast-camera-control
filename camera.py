@@ -1,6 +1,7 @@
 import requests
 from requests.auth import HTTPDigestAuth
 
+
 class camera:
     def __init__(self, ID="", url="", manufacturer="", calendar="", pos=-1, status=0):
         self.ID = ID
@@ -11,19 +12,17 @@ class camera:
         self.status = status
 
         print("Initialized: ", self)
-    
+
     def __str__(self):
         return f"\'{self.ID}\' @ \'{self.url}\' (Type: \'{self.manufacturer}\') (Current Position: {self.pos})"
-    
+
     def updateCalendar(self, calendar):
         self.calendar = calendar
-        
-    
-    # TODO: If code 200 --> update self.pos 
+
     def setPreset(self, preset, verbose=False):
+        # TODO: If code 200 --> update self.pos
         code = -1
         camera = self.url.rstrip('/')
-        #print(camera)
         if self.manufacturer == "panasonic":
             if 0 <= preset <= 100:
                 params = {'cmd': f'#R{preset - 1:02}', 'res': 1}
@@ -34,7 +33,8 @@ class camera:
                 code = requests.get(url, auth=auth, params=params)
 
             else:
-                print("Could not use the specified preset number, because it is out of range.\nThe Range is from 0 to 100 (including borders)")
+                print("Could not use the specified preset number, because it is out of range.")
+                print("The Range is from 0 to 100 (including borders)")
         elif self.manufacturer == "sony":
             if 1 <= preset <= 10:
                 # Presets start at 1 for Sony cameras
@@ -46,11 +46,11 @@ class camera:
                     print("URL:" + url)
                 code = requests.get(url, auth=auth, headers=headers, params=params)
             else:
-                print("Could not use the specified preset number, because it is out of range.\nThe Range is from 1 to 10 (including borders)")
+                print("Could not use the specified preset number, because it is out of range.")
+                print("The Range is from 1 to 10 (including borders)")
 
         else:
             print("Unknown Camera Type \'%s\'.\nKnown Types are \'panasonis\' and \'sony\'." % self.manufacturer)
-
 
         if code == 200:
             self.pos = preset
