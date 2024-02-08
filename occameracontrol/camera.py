@@ -15,59 +15,62 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import requests
+
+from enum import Enum
 from requests.auth import HTTPDigestAuth
 
 
-class Camera:
-    def __init__(self, ID="", url="", manufacturer="", calendar="", pos=-1, status=0):
-        self.ID = ID
-        self.url = url
-        self.manufacturer = manufacturer
-        self.calendar = calendar
-        self.pos = pos
-        self.status = status
+class CameraType(Enum):
+    sony = 'sony'
+    panasonic = 'panasonic'
 
-        print("Initialized: ", self)
+
+class Camera:
+    agent_id = None
+    calendar = []
+    password = None
+    position = -1
+    type = None
+    url = None
+    user = None
+
+    def __init__(self,
+                 agent_id: str,
+                 url: str,
+                 type: str,
+                 user: str | None = None,
+                 password: str | None = None):
+        self.agent_id = agent_id
+        self.url = url.rstrip('/')
+        self.type = CameraType[type]
+        self.user = user
+        self.password = password
 
     def __str__(self):
-        return f"\'{self.ID}\' @ \'{self.url}\' (Type: \'{self.manufacturer}\') (Current Position: {self.pos})"
+        return f"'{self.agent_id}' @ '{self.url}' " \
+                f"(type: '{self.type.value}', position: {self.position})"
 
     def updateCalendar(self, calendar):
         self.calendar = calendar
 
     def setPreset(self, preset, verbose=False):
-        # TODO: If code 200 --> update self.pos
-        code = -1
-        camera = self.url.rstrip('/')
-        if self.manufacturer == "panasonic":
-            if 0 <= preset <= 100:
-                params = {'cmd': f'#R{preset - 1:02}', 'res': 1}
-                url = f'{camera}/cgi-bin/aw_ptz'
-                auth = ('admin', 'PASS')
-                if verbose:
-                    print("URL:" + url)
-                code = requests.get(url, auth=auth, params=params)
+        if self.type == CameraType.panasonic:
+            params = {'cmd': f'#R{preset - 1:02}', 'res': 1}
+            url = f'{self.url}/cgi-bin/aw_ptz'
+            auth = (self.user, self.password) if self.user else None
+            if verbose:
+                print("URL:" + url)
+            response = requests.get(url, auth=auth, params=params)
+            response.raise_for_status()
 
-            else:
-                print("Could not use the specified preset number, because it is out of range.")
-                print("The Range is from 0 to 100 (including borders)")
-        elif self.manufacturer == "sony":
-            if 1 <= preset <= 10:
-                # Presets start at 1 for Sony cameras
-                url = f'{camera}/command/presetposition.cgi'
-                params = {'PresetCall': preset}
-                auth = HTTPDigestAuth('admin', '<password>')
-                headers = {'referer': f'{camera}/'}
-                if verbose:
-                    print("URL:" + url)
-                code = requests.get(url, auth=auth, headers=headers, params=params)
-            else:
-                print("Could not use the specified preset number, because it is out of range.")
-                print("The Range is from 1 to 10 (including borders)")
+        elif self.type == CameraType.sony:
+            url = f'{self.url}/command/presetposition.cgi'
+            params = {'PresetCall': preset}
+            auth = HTTPDigestAuth(self.user, self.password)
+            headers = {'referer': f'{self.url}/'}
+            if verbose:
+                print("URL:" + url)
+            response = requests.get(url, auth=auth, headers=headers, params=params)
+            response.raise_for_status()
 
-        else:
-            print("Unknown Camera Type \'%s\'.\nKnown Types are \'panasonis\' and \'sony\'." % self.manufacturer)
-
-        if code == 200:
-            self.pos = preset
-        return code
+        self.position = preset

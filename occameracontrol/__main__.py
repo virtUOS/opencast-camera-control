@@ -74,7 +74,7 @@ def camera_loop(camera: Camera):
     while True:
         # Update calendar
         if time.time() - last_updated > config('calendar', 'update_frequency'):
-            events, _, _ = getCalendar(camera.ID, getCutoff())
+            events, _, _ = getCalendar(camera.agent_id, getCutoff())
             # reverse sort, so pop returns the next event
             events = sorted(events, key=lambda x: x[1], reverse=True)
             last_updated = time.time()
@@ -86,32 +86,32 @@ def camera_loop(camera: Camera):
         # Set start end end to 0 if there is no event
         title, start, end = events[0] if events else ('', 0, 0)
         if now < start < end:
-            print("[" + camera.ID + "] Next planned event is \'" + title+"\' in " + str((start - now)/1000) + " seconds")
+            print("[" + camera.agent_id + "] Next planned event is \'" + title+"\' in " + str((start - now)/1000) + " seconds")
         elif start <= now < end:
-            print("[" + camera.ID + "] Active events \'" + title+"\' ends in " + str((end - now)/1000) + " seconds")
+            print("[" + camera.agent_id + "] Active events \'" + title+"\' ends in " + str((end - now)/1000) + " seconds")
         else:
-            print("[" + camera.ID + "] No planned events")
+            print("[" + camera.agent_id + "] No planned events")
 
         if (start - now)/1000 == 3:
-            print("[" + camera.ID + "] 3...")
+            print("[" + camera.agent_id + "] 3...")
         elif (start - now)/1000 == 2:
-            print("[" + camera.ID + "] 2...")
+            print("[" + camera.agent_id + "] 2...")
         elif (start - now)/1000 == 1:
-            print("[" + camera.ID + "] 1...")
+            print("[" + camera.agent_id + "] 1...")
 
         if start <= now < end:
             # TODO: Preset numbers should not be hard-coded
-            if camera.pos != 1:
-                print("[" + camera.ID + "] Event \'" + title + "\' has started!")
+            if camera.position != 1:
+                print("[" + camera.agent_id + "] Event \'" + title + "\' has started!")
                 # Move to recording preset
-                print("[" + camera.ID + "] Move to Preset 1 for recording...")
+                print("[" + camera.agent_id + "] Move to Preset 1 for recording...")
                 camera.setPreset(1, True)
 
         else:  # No active event
-            if camera.pos != 10:
+            if camera.position != 10:
                 # Return to netral preset
-                print("[" + camera.ID + "] Event \'" + title + "\' has ended!")
-                print("[" + camera.ID + "] Return to Preset \'Home\'...")
+                print("[" + camera.agent_id + "] Event \'" + title + "\' has ended!")
+                print("[" + camera.agent_id + "] Return to Preset \'Home\'...")
                 camera.setPreset(10, True)
 
         time.sleep(1)
@@ -139,18 +139,14 @@ def main():
     for agentID, agent_cameras in config('camera').items():
         print(agentID)
         for camera in agent_cameras:
-            print(f'- {camera["url"]}')
-            print(f'  {camera["type"]}')
-            c = Camera(agentID, camera['url'], camera['type'], "", 10, 0)
-            c.updateCalendar(getCalendar(c.ID, getCutoff()))
-            cameras.append(c)
+            cam = Camera(agentID, **camera)
+            print('-', cam)
+            cameras.append(cam)
 
     # TODO Create a list / dict of cameras
     threads = []
     for camera in cameras:
-        print(camera.ID, camera.url, camera.manufacturer)
-
-        print("Starting Thread for ", camera.ID, " @ ", camera.url)
+        print("Starting camera control for ", camera.agent_id, " @ ", camera.url)
         camera_control = threading.Thread(target=camera_loop, args=(camera,))
         threads.append(camera_control)
         camera_control.start()
