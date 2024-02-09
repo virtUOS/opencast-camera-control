@@ -14,10 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import logging
 import requests
 
 from enum import Enum
 from requests.auth import HTTPDigestAuth
+
+
+logger = logging.getLogger(__name__)
 
 
 class CameraType(Enum):
@@ -53,13 +57,12 @@ class Camera:
     def updateCalendar(self, calendar):
         self.calendar = calendar
 
-    def setPreset(self, preset, verbose=False):
+    def setPreset(self, preset):
         if self.type == CameraType.panasonic:
             params = {'cmd': f'#R{preset - 1:02}', 'res': 1}
             url = f'{self.url}/cgi-bin/aw_ptz'
             auth = (self.user, self.password) if self.user else None
-            if verbose:
-                print("URL:" + url)
+            logger.debug('GET %s with params: %s', url, params)
             response = requests.get(url, auth=auth, params=params)
             response.raise_for_status()
 
@@ -68,8 +71,7 @@ class Camera:
             params = {'PresetCall': preset}
             auth = HTTPDigestAuth(self.user, self.password)
             headers = {'referer': f'{self.url}/'}
-            if verbose:
-                print("URL:" + url)
+            logger.debug('GET %s with params: %s', url, params)
             response = requests.get(url, auth=auth, headers=headers, params=params)
             response.raise_for_status()
 

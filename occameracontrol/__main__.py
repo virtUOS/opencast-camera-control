@@ -15,6 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import argparse
+import logging
 import requests
 import time
 import threading
@@ -26,43 +27,47 @@ from datetime import datetime as dt
 from occameracontrol.camera import Camera
 
 
-def getCutoff():
-    # calculate the offset of now + 1 week
+logger = logging.getLogger(__name__)
+
+
+def cutoff():
+    ''' calculate the offset of now + 1 week
+    '''
     return (int(time.time()) + 7*24*60*60)*1000
 
 
-def printPlanned(cal):
+def parse_calendar(cal):
+    '''Take the calendar data from Opencast and return a list of event data.
+    '''
     events = []
     for event in cal:
         data = event['data']
-        print("\nEvent Name: ", data['agentConfig']['event.title'])
-        print("Start: ", data['startDate'])
-        print("End Date: ", data['endDate'])
+        title = data['agentConfig']['event.title']
+        logger.debug('Got event `%s` (start: %s, end: %s)',
+                     title, data['startDate'], data['endDate'])
 
-        start = int(dt.strptime(str(parse(data['startDate'], dayfirst=True)), '%Y-%m-%d %H:%M:%S').timestamp() * 1000)
-        end = int(dt.strptime(str(parse(data['endDate'], dayfirst=True)), '%Y-%m-%d %H:%M:%S').timestamp() * 1000)
+        start = int(parse(data['startDate'], dayfirst=True).timestamp() * 1000)
+        end = int(parse(data['endDate'], dayfirst=True).timestamp() * 1000)
 
-        print(start, end, end-start)
-
-        events.append((data['agentConfig']['event.title'], start, end))
+        events.append((title, start, end))
     return events
 
 
-def getCalendar(agentId, cutoff, verbose=False):
+def get_calendar(agentId):
     server = config('opencast', 'server').rstrip('/')
     auth = (config('opencast', 'username'), config('opencast', 'password'))
     url = f'{server}/recordings/calendar.json'
-    params = {'agentid': agentId, 'cutoff': cutoff}
-    print("[" + agentId + "] REQUEST:", url)
+    params = {'agentid': agentId, 'cutoff': cutoff()}
 
-    calendar = requests.get(url, auth=auth, params=params)
-    if verbose:
-        print("STATUS:", calendar.status_code)
-        print("JSON:", calendar.json())
+    logger.info('Updating calendar for agent `%s`', agentId)
 
-    events = printPlanned(calendar.json())
+    response = requests.get(url, auth=auth, params=params)
+    response.raise_for_status()
 
-    return events, calendar.status_code, calendar
+    calendar = response.json()
+    logger.debug('Calendar data: %s', calendar)
+
+    return parse_calendar(calendar)
 
 
 def calendar_loop(cameras: list):
@@ -74,7 +79,7 @@ def camera_loop(camera: Camera):
     while True:
         # Update calendar
         if time.time() - last_updated > config('calendar', 'update_frequency'):
-            events, _, _ = getCalendar(camera.agent_id, getCutoff())
+            events = get_calendar(camera.agent_id)
             # reverse sort, so pop returns the next event
             events = sorted(events, key=lambda x: x[1], reverse=True)
             last_updated = time.time()
@@ -86,33 +91,27 @@ def camera_loop(camera: Camera):
         # Set start end end to 0 if there is no event
         title, start, end = events[0] if events else ('', 0, 0)
         if now < start < end:
-            print("[" + camera.agent_id + "] Next planned event is \'" + title+"\' in " + str((start - now)/1000) + " seconds")
+            logger.info('[%s] Next planned event `%s` starts in %s seconds',
+                        camera.agent_id, title, (start - now) / 1000)
         elif start <= now < end:
-            print("[" + camera.agent_id + "] Active events \'" + title+"\' ends in " + str((end - now)/1000) + " seconds")
+            logger.info('[%s] Active events `%s` ends in %s seconds',
+                        camera.agent_id, title, (end - now) / 1000)
         else:
-            print("[" + camera.agent_id + "] No planned events")
-
-        if (start - now)/1000 == 3:
-            print("[" + camera.agent_id + "] 3...")
-        elif (start - now)/1000 == 2:
-            print("[" + camera.agent_id + "] 2...")
-        elif (start - now)/1000 == 1:
-            print("[" + camera.agent_id + "] 1...")
+            logger.info('[%s] No planned events', camera.agent_id)
 
         if start <= now < end:
             # TODO: Preset numbers should not be hard-coded
             if camera.position != 1:
-                print("[" + camera.agent_id + "] Event \'" + title + "\' has started!")
+                logger.info('[%s] Event `%s` started', camera.agent_id, title)
+                logger.info('[%s] Moving to preset 1', camera.agent_id)
                 # Move to recording preset
-                print("[" + camera.agent_id + "] Move to Preset 1 for recording...")
-                camera.setPreset(1, True)
+                camera.setPreset(1)
 
         else:  # No active event
             if camera.position != 10:
                 # Return to netral preset
-                print("[" + camera.agent_id + "] Event \'" + title + "\' has ended!")
-                print("[" + camera.agent_id + "] Return to Preset \'Home\'...")
-                camera.setPreset(10, True)
+                logger.info('[%s] Returning to preset 10', camera.agent_id)
+                camera.setPreset(10)
 
         time.sleep(1)
 
@@ -133,20 +132,21 @@ def main():
     if args.config:
         config_files = (args.config,)
 
-    setup(files=config_files, logger=('loglevel'))
+    setup(files=config_files, logger=('loglevel',))
 
     cameras = []
-    for agentID, agent_cameras in config('camera').items():
-        print(agentID)
+    for agent_id, agent_cameras in config('camera').items():
+        logger.debug('Configuring agent %s', agent_id)
         for camera in agent_cameras:
-            cam = Camera(agentID, **camera)
-            print('-', cam)
+            cam = Camera(agent_id, **camera)
+            logger.debug('Configuring camera: %s', cam)
             cameras.append(cam)
 
     # TODO Create a list / dict of cameras
     threads = []
     for camera in cameras:
-        print("Starting camera control for ", camera.agent_id, " @ ", camera.url)
+        logger.info('Starting camera control for %s @ %s',
+                    camera.agent_id, camera.url)
         camera_control = threading.Thread(target=camera_loop, args=(camera,))
         threads.append(camera_control)
         camera_control.start()

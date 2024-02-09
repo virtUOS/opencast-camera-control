@@ -35,3 +35,5 @@ camera:
   15-217-3:
     - url: http://camera-sony-15-217.virtuos.uni-osnabrueck.de
       type: sony
+
+loglevel: debug
