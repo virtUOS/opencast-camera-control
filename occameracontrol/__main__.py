@@ -69,10 +69,6 @@ def get_calendar(agentId):
     return parse_calendar(calendar)
 
 
-def calendar_loop(cameras: list):
-    pass
-
-
 def camera_loop(camera: Camera):
     last_updated = 0
     while True:
