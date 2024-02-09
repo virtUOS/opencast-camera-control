@@ -34,7 +34,6 @@ class CameraType(Enum):
 
 class Camera:
     agent = None
-    calendar = []
     password = None
     position = -1
     type = None
@@ -56,9 +55,6 @@ class Camera:
     def __str__(self):
         return f"'{self.agent.agent_id}' @ '{self.url}' " \
                 f"(type: '{self.type.value}', position: {self.position})"
-
-    def updateCalendar(self, calendar):
-        self.calendar = calendar
 
     def setPreset(self, preset):
         if self.type == CameraType.panasonic:
