@@ -1,0 +1,19 @@
+name: check for license header
+
+on:
+  push:
+    branches-ignore:
+      - 'dependabot/**'
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - run: >
+        ! grep --files-without-match --recursive --include='*.py'
+        'under the terms of the GNU General Public License' occameracontrol
+        | grep occameracontrol
