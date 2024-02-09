@@ -18,9 +18,9 @@ import argparse
 import logging
 import requests
 import time
-import threading
 
 from confygure import setup, config
+from threading import Thread
 
 from occameracontrol.agent import Agent
 from occameracontrol.camera import Camera
@@ -79,13 +79,13 @@ def main():
             cameras.append(cam)
 
     threads = []
-    agent_update = threading.Thread(target=update_agents, args=(agents,))
+    agent_update = Thread(target=update_agents, args=(agents,))
     threads.append(agent_update)
     agent_update.start()
 
     for camera in cameras:
         logger.info('Starting camera control for %s', camera)
-        control_truead = threading.Thread(target=control_camera, args=(camera,))
+        control_truead = Thread(target=control_camera, args=(camera,))
         threads.append(control_truead)
         control_truead.start()
 

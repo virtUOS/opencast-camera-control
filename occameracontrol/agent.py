@@ -61,7 +61,7 @@ class Agent:
         return (int(time.time()) + cutoff_seconds) * 1000
 
     def parse_calendar(self, cal):
-        '''Take the calendar data from Opencast and return a list of event data.
+        '''Take the calendar data from Opencast and return a list of events.
         '''
         events = []
         for event in cal:
