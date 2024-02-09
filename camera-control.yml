@@ -13,6 +13,11 @@ calendar:
   # The frequency in which the calendar should be updated in seconds
   update_frequency: 120
 
+  # How far in the future should calendar items be cached
+  # Seconds fro when the calendar is requested.
+  # Default: 604800 (7 days)
+  cutoff: 604800
+
 # Camera Configuration
 # Configure the capture agents to get the calendar for and a list of cameras to
 # control when a capture agent starts.

@@ -54,11 +54,11 @@ class Agent:
     def __init__(self, agent_id: str):
         self.agent_id = agent_id
 
-    def cutoff(self):
-        ''' calculate the offset of now + 1 week
+    def cutoff(self) -> int:
+        '''Returns the calendar cutoff time in milliseconds.
         '''
-        # TODO: make cutoff date configurable
-        return (int(time.time()) + 7*24*60*60)*1000
+        cutoff_seconds = config('calendar', 'cutoff') or (7 * 24 * 60 * 60)
+        return (int(time.time()) + cutoff_seconds) * 1000
 
     def parse_calendar(self, cal):
         '''Take the calendar data from Opencast and return a list of event data.
