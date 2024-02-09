@@ -19,10 +19,12 @@ calendar:
 #
 # The format of this configuration is:
 # <capture-agent-name>:
-#   - url: http://url.to.first.camera.interface
+#   - url: http://url.to.camera.interface
 #     type: `panasonic` or `sony`
 #     user: username to access the API (optional)
 #     password: password to access the API (optional)
+#     preset_active: Camera preset to move to when recording (default: 1)
+#     preset_inactive: Camera preset to move to when not recording (default: 10)
 camera:
   15-217-1:
     - url: http://camera-panasonic-15-217.virtuos.uni-osnabrueck.de
@@ -32,6 +34,8 @@ camera:
   15-217-2:
     - url: http://camera-2-panasonic-15-217.virtuos.uni-osnabrueck.de
       type: panasonic
+      preset_active: 1
+      preset_inactive: 10
   15-217-3:
     - url: http://camera-sony-15-217.virtuos.uni-osnabrueck.de
       type: sony

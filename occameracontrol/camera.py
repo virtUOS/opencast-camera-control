@@ -39,24 +39,30 @@ class Camera:
     type = None
     url = None
     user = None
+    preset_active = 1
+    preset_inactive = 10
 
     def __init__(self,
                  agent: Agent,
                  url: str,
                  type: str,
                  user: str | None = None,
-                 password: str | None = None):
+                 password: str | None = None,
+                 preset_active: int = 1,
+                 preset_inactive: int = 10):
         self.agent = agent
         self.url = url.rstrip('/')
         self.type = CameraType[type]
         self.user = user
         self.password = password
+        self.preset_active = preset_active
+        self.preset_inactive = preset_inactive
 
     def __str__(self):
         return f"'{self.agent.agent_id}' @ '{self.url}' " \
                 f"(type: '{self.type.value}', position: {self.position})"
 
-    def setPreset(self, preset):
+    def move_to_preset(self, preset):
         if self.type == CameraType.panasonic:
             params = {'cmd': f'#R{preset - 1:02}', 'res': 1}
             url = f'{self.url}/cgi-bin/aw_ptz'
@@ -91,15 +97,14 @@ class Camera:
             logger.info('[%s] No planned events', agent_id)
 
         if event.active():
-            # TODO: Preset numbers should not be hard-coded
-            if self.position != 1:
+            if self.position != self.preset_active:
                 logger.info('[%s] Event `%s` started', agent_id, event.title)
-                logger.info('[%s] Moving to preset 1', agent_id)
-                # Move to recording preset
-                self.setPreset(1)
+                logger.info('[%s] Moving to preset %s', agent_id,
+                            self.preset_active)
+                self.move_to_preset(self.preset_active)
 
         else:  # No active event
-            if self.position != 10:
-                # Return to netral preset
-                logger.info('[%s] Returning to preset 10', agent_id)
-                self.setPreset(10)
+            if self.position != self.preset_inactive:
+                logger.info('[%s] Returning to preset %s', agent_id,
+                            self.preset_inactive)
+                self.move_to_preset(self.preset_inactive)
