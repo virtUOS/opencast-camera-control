@@ -16,9 +16,12 @@
 
 import logging
 import requests
+import time
 
 from enum import Enum
 from requests.auth import HTTPDigestAuth
+
+from occameracontrol.agent import Agent
 
 
 logger = logging.getLogger(__name__)
@@ -30,7 +33,7 @@ class CameraType(Enum):
 
 
 class Camera:
-    agent_id = None
+    agent = None
     calendar = []
     password = None
     position = -1
@@ -39,19 +42,19 @@ class Camera:
     user = None
 
     def __init__(self,
-                 agent_id: str,
+                 agent: Agent,
                  url: str,
                  type: str,
                  user: str | None = None,
                  password: str | None = None):
-        self.agent_id = agent_id
+        self.agent = agent
         self.url = url.rstrip('/')
         self.type = CameraType[type]
         self.user = user
         self.password = password
 
     def __str__(self):
-        return f"'{self.agent_id}' @ '{self.url}' " \
+        return f"'{self.agent.agent_id}' @ '{self.url}' " \
                 f"(type: '{self.type.value}', position: {self.position})"
 
     def updateCalendar(self, calendar):
@@ -76,3 +79,31 @@ class Camera:
             response.raise_for_status()
 
         self.position = preset
+
+    def update_position(self):
+        now = int(time.time()) * 1000
+        agent_id = self.agent.agent_id
+        event = self.agent.next_event()
+
+        if event.future():
+            logger.info('[%s] Next event `%s` starts in %s seconds',
+                        agent_id, event.title, (event.start - now) / 1000)
+        elif event.active():
+            logger.info('[%s] Active event `%s` ends in %s seconds',
+                        agent_id, event.title, (event.end - now) / 1000)
+        else:
+            logger.info('[%s] No planned events', agent_id)
+
+        if event.active():
+            # TODO: Preset numbers should not be hard-coded
+            if self.position != 1:
+                logger.info('[%s] Event `%s` started', agent_id, event.title)
+                logger.info('[%s] Moving to preset 1', agent_id)
+                # Move to recording preset
+                self.setPreset(1)
+
+        else:  # No active event
+            if self.position != 10:
+                # Return to netral preset
+                logger.info('[%s] Returning to preset 10', agent_id)
+                self.setPreset(10)
