@@ -68,7 +68,7 @@ class Camera:
             url = f'{self.url}/cgi-bin/aw_ptz'
             auth = (self.user, self.password) if self.user else None
             logger.debug('GET %s with params: %s', url, params)
-            response = requests.get(url, auth=auth, params=params)
+            response = requests.get(url, auth=auth, params=params, timeout=5)
             response.raise_for_status()
 
         elif self.type == CameraType.sony:
@@ -77,7 +77,11 @@ class Camera:
             auth = HTTPDigestAuth(self.user, self.password)
             headers = {'referer': f'{self.url}/'}
             logger.debug('GET %s with params: %s', url, params)
-            response = requests.get(url, auth=auth, headers=headers, params=params)
+            response = requests.get(url,
+                                    auth=auth,
+                                    headers=headers,
+                                    params=params,
+                                    timeout=5)
             response.raise_for_status()
 
         self.position = preset

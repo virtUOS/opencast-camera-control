@@ -85,7 +85,7 @@ class Agent:
 
         logger.info('Updating calendar for agent `%s`', self.agent_id)
 
-        response = requests.get(url, auth=auth, params=params)
+        response = requests.get(url, auth=auth, params=params, timeout=5)
         response.raise_for_status()
 
         calendar = response.json()
