@@ -79,7 +79,11 @@ def camera_loop(camera: Camera):
     while True:
         # Update calendar
         if time.time() - last_updated > config('calendar', 'update_frequency'):
-            events = get_calendar(camera.agent_id)
+            try:
+                events = get_calendar(camera.agent_id)
+            except requests.exceptions.HTTPError as e:
+                logger.error('Failed to get calendar for agent %s: %s',
+                             camera.agent_id, e)
             # reverse sort, so pop returns the next event
             events = sorted(events, key=lambda x: x[1], reverse=True)
             last_updated = time.time()
@@ -105,13 +109,21 @@ def camera_loop(camera: Camera):
                 logger.info('[%s] Event `%s` started', camera.agent_id, title)
                 logger.info('[%s] Moving to preset 1', camera.agent_id)
                 # Move to recording preset
-                camera.setPreset(1)
+                try:
+                    camera.setPreset(1)
+                except requests.exceptions.HTTPError as e:
+                    logger.error('Failed to communicate with camera %s: %s',
+                                 camera, e)
 
         else:  # No active event
             if camera.position != 10:
                 # Return to netral preset
                 logger.info('[%s] Returning to preset 10', camera.agent_id)
-                camera.setPreset(10)
+                try:
+                    camera.setPreset(10)
+                except requests.exceptions.HTTPError as e:
+                    logger.error('Failed to communicate with camera %s: %s',
+                                 camera, e)
 
         time.sleep(1)
 
