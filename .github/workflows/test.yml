@@ -30,6 +30,6 @@ jobs:
 
     - run: pip install flake8 bandit
 
-    - run: flake8 --max-line-length 100 occameracontrol
+    - run: flake8 occameracontrol
 
     - run: bandit -r occameracontrol
