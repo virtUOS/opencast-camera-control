@@ -22,7 +22,6 @@ import threading
 
 from confygure import setup, config
 from dateutil.parser import parse
-from datetime import datetime as dt
 
 from occameracontrol.camera import Camera
 
