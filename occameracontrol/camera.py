@@ -87,28 +87,27 @@ class Camera:
         self.position = preset
 
     def update_position(self):
-        now = int(time.time()) * 1000
         agent_id = self.agent.agent_id
         event = self.agent.next_event()
 
         if event.future():
-            logger.info('[%s] Next event `%s` starts in %s seconds',
-                        agent_id, event.title, (event.start - now) / 1000)
+            logger.info('[%s] Next event `%s` starts in %i seconds',
+                        agent_id, event.title, event.start - time.time())
         elif event.active():
-            logger.info('[%s] Active event `%s` ends in %s seconds',
-                        agent_id, event.title, (event.end - now) / 1000)
+            logger.info('[%s] Active event `%s` ends in %i seconds',
+                        agent_id, event.title, event.end - time.time())
         else:
             logger.info('[%s] No planned events', agent_id)
 
         if event.active():
             if self.position != self.preset_active:
                 logger.info('[%s] Event `%s` started', agent_id, event.title)
-                logger.info('[%s] Moving to preset %s', agent_id,
+                logger.info('[%s] Moving to preset %i', agent_id,
                             self.preset_active)
                 self.move_to_preset(self.preset_active)
 
         else:  # No active event
             if self.position != self.preset_inactive:
-                logger.info('[%s] Returning to preset %s', agent_id,
+                logger.info('[%s] Returning to preset %i', agent_id,
                             self.preset_inactive)
                 self.move_to_preset(self.preset_inactive)

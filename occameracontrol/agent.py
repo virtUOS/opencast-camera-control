@@ -36,15 +36,13 @@ class Event:
         self.end = end
 
     def active(self):
-        now = int(time.time()) * 1000
-        return self.start <= now < self.end
+        return self.start <= time.time() < self.end
 
     def future(self):
-        now = int(time.time()) * 1000
-        return now < self.start < self.end
+        return time.time() < self.start < self.end
 
     def __str__(self):
-        return f'{self.title} (start: {self.start}, end: {self.end})'
+        return f'{self.title} (start: {self.start:.3f}, end: {self.end:.3f})'
 
 
 class Agent:
@@ -67,8 +65,8 @@ class Agent:
         for event in cal:
             data = event['data']
             title = data['agentConfig']['event.title']
-            start = int(parse(data['startDate'], dayfirst=True).timestamp() * 1000)
-            end = int(parse(data['endDate'], dayfirst=True).timestamp() * 1000)
+            start = parse(data['startDate'], dayfirst=True).timestamp()
+            end = parse(data['endDate'], dayfirst=True).timestamp()
             event = Event(title, start, end)
 
             logger.debug('Got event %s', event)
@@ -97,8 +95,8 @@ class Agent:
         '''Return a list of active events
         '''
         # Remove old events from cached events
-        now = int(time.time()) * 1000
-        return [e for e in self.events if e.end > now]
+        now = time.time()
+        return [e for e in self.events if e.end >= now]
 
     def next_event(self):
         events = self.active_events()
