@@ -45,4 +45,19 @@ camera:
     - url: http://camera-sony-15-217.virtuos.uni-osnabrueck.de
       type: sony
 
+metrics:
+  # Default: False
+  enabled: True
+  # Default: 8000
+  port: 8000
+  # Default: 127.0.0.1
+  addr: '0.0.0.0'
+
+  # Default: null
+  certfile: null
+
+  # Default: null
+  keyfile: null
+
+# Configure the log level
 loglevel: debug

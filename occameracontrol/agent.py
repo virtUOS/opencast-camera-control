@@ -21,6 +21,8 @@ import time
 from confygure import config
 from dateutil.parser import parse
 
+from occameracontrol.metrics import register_calendar_update
+
 
 logger = logging.getLogger(__name__)
 
@@ -90,6 +92,7 @@ class Agent:
         logger.debug('Calendar data: %s', calendar)
 
         self.events = self.parse_calendar(calendar)
+        register_calendar_update(self.agent_id)
 
     def active_events(self):
         '''Return a list of active events

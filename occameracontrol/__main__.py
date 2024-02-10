@@ -16,7 +16,6 @@
 
 import argparse
 import logging
-import requests
 import time
 
 from confygure import setup, config
@@ -24,28 +23,34 @@ from threading import Thread
 
 from occameracontrol.agent import Agent
 from occameracontrol.camera import Camera
+from occameracontrol.metrics import start_metrics_exporter, RequestErrorHandler
 
 
 logger = logging.getLogger(__name__)
 
 
 def update_agents(agents: list[Agent]):
+    error_handlers = {
+        agent.agent_id: RequestErrorHandler(
+                agent.agent_id,
+                f'Failed to update calendar of agent {agent.agent_id}')
+        for agent in agents}
+
+    # Continuously update agent calendars
     while True:
         for agent in agents:
-            try:
+            with error_handlers[agent.agent_id]:
                 agent.update_calendar()
-            except requests.exceptions.HTTPError as e:
-                logger.error('Failed to update calendar of agent %s: %s',
-                             agent.agent_id, e)
         time.sleep(config('calendar', 'update_frequency'))
 
 
 def control_camera(camera: Camera):
+    error_handler = RequestErrorHandler(
+            camera.url,
+            f'Failed to communicate with camera {camera}')
     while True:
-        try:
+        with error_handler:
             camera.update_position()
-        except requests.exceptions.HTTPError as e:
-            logger.error('Failed to communicate with camera %s: %s', camera, e)
         time.sleep(1)
 
 
@@ -88,6 +93,9 @@ def main():
         control_truead = Thread(target=control_camera, args=(camera,))
         threads.append(control_truead)
         control_truead.start()
+
+    # Start delivering metrics
+    start_metrics_exporter()
 
     try:
         for thread in threads:

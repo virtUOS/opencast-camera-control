@@ -22,6 +22,7 @@ from enum import Enum
 from requests.auth import HTTPDigestAuth
 
 from occameracontrol.agent import Agent
+from occameracontrol.metrics import register_camera_move
 
 
 logger = logging.getLogger(__name__)
@@ -59,8 +60,7 @@ class Camera:
         self.preset_inactive = preset_inactive
 
     def __str__(self):
-        return f"'{self.agent.agent_id}' @ '{self.url}' " \
-                f"(type: '{self.type.value}', position: {self.position})"
+        return f"'{self.agent.agent_id}' @ '{self.url}'"
 
     def move_to_preset(self, preset):
         if self.type == CameraType.panasonic:
@@ -85,6 +85,7 @@ class Camera:
             response.raise_for_status()
 
         self.position = preset
+        register_camera_move(self.url, preset)
 
     def update_position(self):
         agent_id = self.agent.agent_id
