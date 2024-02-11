@@ -17,7 +17,7 @@
 import logging
 import time
 
-from confygure import config
+from confygure import config_t
 from prometheus_client import Counter, Gauge
 from prometheus_client import start_http_server
 
@@ -64,11 +64,11 @@ def register_camera_move(camera: str, position: int):
 
 
 def start_metrics_exporter():
-    if not config('metrics', 'enabled'):
+    if not config_t(bool, 'metrics', 'enabled'):
         return
 
     start_http_server(
-        port=config('metrics', 'port') or 8000,
-        addr=config('metrics', 'addr') or '127.0.0.1',
-        certfile=config('metrics', 'certfile'),
-        keyfile=config('metrics', 'keyfile'))
+        port=config_t(int, 'metrics', 'port') or 8000,
+        addr=config_t(str, 'metrics', 'addr') or '127.0.0.1',
+        certfile=config_t(str, 'metrics', 'certfile'),
+        keyfile=config_t(str, 'metrics', 'keyfile'))

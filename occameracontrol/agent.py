@@ -18,7 +18,7 @@ import logging
 import requests
 import time
 
-from confygure import config
+from confygure import config_t, config_rt
 from dateutil.parser import parse
 
 from occameracontrol.metrics import register_calendar_update
@@ -28,11 +28,11 @@ logger = logging.getLogger(__name__)
 
 
 class Event:
-    title = None
-    start = -1
-    end = -1
+    title: str
+    start: float
+    end: float
 
-    def __init__(self, title: str, start: int, end: int):
+    def __init__(self, title: str, start: float, end: float):
         self.title = title
         self.start = start
         self.end = end
@@ -48,7 +48,7 @@ class Event:
 
 
 class Agent:
-    agent_id = None
+    agent_id: str
     events: list[Event] = []
 
     def __init__(self, agent_id: str):
@@ -57,7 +57,8 @@ class Agent:
     def cutoff(self) -> int:
         '''Returns the calendar cutoff time in milliseconds.
         '''
-        cutoff_seconds = config('calendar', 'cutoff') or (7 * 24 * 60 * 60)
+        week_in_seconds = 7 * 24 * 60 * 60
+        cutoff_seconds = config_t(int, 'calendar', 'cutoff') or week_in_seconds
         return (int(time.time()) + cutoff_seconds) * 1000
 
     def parse_calendar(self, cal):
@@ -78,8 +79,10 @@ class Agent:
         return sorted(events, key=lambda e: e.start, reverse=True)
 
     def update_calendar(self):
-        server = config('opencast', 'server').rstrip('/')
-        auth = (config('opencast', 'username'), config('opencast', 'password'))
+        server = config_rt(str, 'opencast', 'server').rstrip('/')
+        username = config_rt(str, 'opencast', 'username')
+        password = config_rt(str, 'opencast', 'password')
+        auth = (username, password)
         url = f'{server}/recordings/calendar.json'
         params = {'agentid': self.agent_id, 'cutoff': self.cutoff()}
 

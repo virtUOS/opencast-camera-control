@@ -18,7 +18,7 @@ import argparse
 import logging
 import time
 
-from confygure import setup, config
+from confygure import setup, config_t, config_rt
 from threading import Thread
 
 from occameracontrol.agent import Agent
@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 def update_agents(agents: list[Agent]):
+    update_frequency = config_t(int, 'calendar', 'update_frequency') or 120
     error_handlers = {
         agent.agent_id: RequestErrorHandler(
                 agent.agent_id,
@@ -41,7 +42,7 @@ def update_agents(agents: list[Agent]):
         for agent in agents:
             with error_handlers[agent.agent_id]:
                 agent.update_calendar()
-        time.sleep(config('calendar', 'update_frequency'))
+        time.sleep(update_frequency)
 
 
 def control_camera(camera: Camera):
@@ -63,18 +64,18 @@ def main():
         help='Path to a configuration file'
     )
     args = parser.parse_args()
-    config_files = (
+    config_files = [
             './camera-control.yml',
             '~/camera-control.yml',
-            '/etc/camera-control.yml')
+            '/etc/camera-control.yml']
     if args.config:
-        config_files = (args.config,)
+        config_files = [args.config]
 
-    setup(files=config_files, logger=('loglevel',))
+    setup(files=config_files, logger=['loglevel'])
 
     cameras = []
     agents = []
-    for agent_id, agent_cameras in config('camera').items():
+    for agent_id, agent_cameras in config_rt(dict, 'camera').items():
         agent = Agent(agent_id)
         agents.append(agent)
         logger.debug('Configuring agent %s', agent_id)

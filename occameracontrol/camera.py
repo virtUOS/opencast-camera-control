@@ -20,6 +20,7 @@ import time
 
 from enum import Enum
 from requests.auth import HTTPDigestAuth
+from typing import Optional
 
 from occameracontrol.agent import Agent
 from occameracontrol.metrics import register_camera_move
@@ -34,21 +35,21 @@ class CameraType(Enum):
 
 
 class Camera:
-    agent = None
-    password = None
-    position = -1
-    type = None
-    url = None
-    user = None
-    preset_active = 1
-    preset_inactive = 10
+    agent: Agent
+    password: Optional[str] = None
+    position: int = -1
+    type: CameraType
+    url: str
+    user: Optional[str] = None
+    preset_active: int = 1
+    preset_inactive: int = 10
 
     def __init__(self,
                  agent: Agent,
                  url: str,
                  type: str,
-                 user: str | None = None,
-                 password: str | None = None,
+                 user: Optional[str] = None,
+                 password: Optional[str] = None,
                  preset_active: int = 1,
                  preset_inactive: int = 10):
         self.agent = agent
@@ -66,7 +67,8 @@ class Camera:
         if self.type == CameraType.panasonic:
             params = {'cmd': f'#R{preset - 1:02}', 'res': 1}
             url = f'{self.url}/cgi-bin/aw_ptz'
-            auth = (self.user, self.password) if self.user else None
+            auth = (self.user, self.password) \
+                if self.user and self.password else None
             logger.debug('GET %s with params: %s', url, params)
             response = requests.get(url, auth=auth, params=params, timeout=5)
             response.raise_for_status()
@@ -74,8 +76,9 @@ class Camera:
         elif self.type == CameraType.sony:
             url = f'{self.url}/command/presetposition.cgi'
             params = {'PresetCall': preset}
-            auth = HTTPDigestAuth(self.user, self.password)
             headers = {'referer': f'{self.url}/'}
+            auth = HTTPDigestAuth(self.user, self.password) \
+                if self.user and self.password else None
             logger.debug('GET %s with params: %s', url, params)
             response = requests.get(url,
                                     auth=auth,
