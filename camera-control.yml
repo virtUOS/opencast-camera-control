@@ -11,6 +11,7 @@ opencast:
 
 calendar:
   # The frequency in which the calendar should be updated in seconds
+  # Default: 120
   update_frequency: 120
 
   # How far in the future should calendar items be cached
@@ -31,33 +32,41 @@ calendar:
 #     preset_active: Camera preset to move to when recording (default: 1)
 #     preset_inactive: Camera preset to move to when not recording (default: 10)
 camera:
-  15-217-1:
-    - url: http://camera-panasonic-15-217.virtuos.uni-osnabrueck.de
+  test-agent:
+    - url: http://camera-panasonic.example.com
       type: panasonic
       user: admin
       password: admin
-  15-217-2:
-    - url: http://camera-2-panasonic-15-217.virtuos.uni-osnabrueck.de
+  test-agent-2:
+    - url: http://camera-2-panasonic.example.com
       type: panasonic
       preset_active: 1
       preset_inactive: 10
-  15-217-3:
-    - url: http://camera-sony-15-217.virtuos.uni-osnabrueck.de
+    - url: http://camera-sony.example.com
       type: sony
 
 metrics:
+  # Enable metrics to start a web server and provide OpenMetrics data
   # Default: False
   enabled: True
+
+  # The TCP port to listen to
   # Default: 8000
   port: 8000
-  # Default: 127.0.0.1
-  addr: '0.0.0.0'
 
+  # The address to bind to
+  # Default: 127.0.0.1
+  addr: '127.0.0.1'
+
+  # A TLS certificate for HTTPS
   # Default: null
   certfile: null
 
+  # A TLS certificate key for HTTPS
   # Default: null
   keyfile: null
 
 # Configure the log level
+# Available levels are: debug, info, warning, error, critical)
+# Default: info
 loglevel: debug

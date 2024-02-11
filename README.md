@@ -2,12 +2,35 @@
 
 Control PTZ camera to move to certain presets when starting a scheduled recording.
 
+This tool communicated with [Opencast](https://opencast.org) to get scheduled
+evens for a list of configured capture agents. When an event starts, cameras
+configured to be part of the agent's setup are then automatically turned to an
+active position specified by a configurable camera preset. When the event ends,
+the camera is turned back to a neutral position.
+
+This allows you, for example, to automatically turn cameras to the wall when no
+recordings are active.
+
+
 ## Getting started
 
 ```
 ❯ pip install -r requirements.txt
 ❯ python -m occameracontrol
 ```
+
+
+## Configuration
+
+Take a look at the [camera-control.yml](camera-control.yml) configuration file.
+All available options are documented in there.
+
+You can provide custom configuration files using the `--config` option:
+
+```
+❯ python -m occameracontrol --config custom-config.yml
+```
+
 
 ## Metrics
 
@@ -16,7 +39,7 @@ insight into current camera positions and will report occurring errors.
 
 The resulting metrics data will look like this:
 
-```
+```properties
 # HELP request_errors_total Number of errors related to HTTP requests
 # TYPE request_errors_total counter
 request_errors_total{ressource="http://camera-3-panasonic.example.com",type="ConnectionError"} 77.0

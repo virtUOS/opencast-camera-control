@@ -30,6 +30,8 @@ logger = logging.getLogger(__name__)
 
 
 def update_agents(agents: list[Agent]):
+    '''Control loop for updating the capture agent calendars on a regular basis
+    '''
     update_frequency = config_t(int, 'calendar', 'update_frequency') or 120
     error_handlers = {
         agent.agent_id: RequestErrorHandler(
@@ -46,6 +48,9 @@ def update_agents(agents: list[Agent]):
 
 
 def control_camera(camera: Camera):
+    '''Control loop to trigger updating the camera position based on currently
+    active events.
+    '''
     error_handler = RequestErrorHandler(
             camera.url,
             f'Failed to communicate with camera {camera}')

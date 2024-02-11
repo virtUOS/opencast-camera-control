@@ -39,31 +39,64 @@ camera_position = Gauge('camera_position',
 
 
 class RequestErrorHandler():
-    def __init__(self, ressource, message):
-        self.ressource = ressource
+    '''Context management object for catching request errors, log them and add
+    them to the metrics. Using this you can do something like::
+
+        handler = RequestErrorHandler('cam1', 'Unable to connect to cam 1')
+        with handler:
+            cam1.update()
+
+    If `update()` raises an error, the handler will log the error but prevent
+    the error from propagating any further.
+    '''
+
+    def __init__(self, resource, message):
+        '''Create a RequestErrorHandler instance.
+
+        :param ressource: Identifier of the resource
+        :param message: Message to log in case of an error
+        '''
+        self.resource = resource
         self.message = message
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
+        '''Handler for then exiting the `with` block. Takes care of catching
+        errors, logging them and updating the metrics.
+        '''
         if exc_type:
             logger.exception(self.message)
-            request_errors.labels(self.ressource, exc_type.__name__).inc()
+            request_errors.labels(self.resource, exc_type.__name__).inc()
         # Silence Exception types
         return exc_type is None or issubclass(exc_type, Exception)
 
 
 def register_calendar_update(agent_id: str):
+    '''Update metrics for when a calendar update happened. This updates both
+    the metrics for successful updates and the time of the last update.
+
+    :param agent_id: Capture agent identifier
+    '''
     agent_calendar_update_total.labels(agent_id).inc()
     agent_calendar_update_time.labels(agent_id).set(time.time())
 
 
 def register_camera_move(camera: str, position: int):
+    '''Update metrics for when a camera move has happened. This ensures the
+    position the camera is available as part of the metrics.
+
+    :param camera: Camera identifier
+    :param position: New camera position
+    '''
     camera_position.labels(camera).set(position)
 
 
 def start_metrics_exporter():
+    '''Start the web server for the metrics exporter endpoint if it is enabled
+    in the configuration.
+    '''
     if not config_t(bool, 'metrics', 'enabled'):
         return
 

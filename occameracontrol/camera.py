@@ -30,11 +30,15 @@ logger = logging.getLogger(__name__)
 
 
 class CameraType(Enum):
+    '''Enumm with supported camera manufacturer types
+    '''
     sony = 'sony'
     panasonic = 'panasonic'
 
 
 class Camera:
+    '''A camera with data about its web interface
+    '''
     agent: Agent
     password: Optional[str] = None
     position: int = -1
@@ -60,10 +64,14 @@ class Camera:
         self.preset_active = preset_active
         self.preset_inactive = preset_inactive
 
-    def __str__(self):
+    def __str__(self) -> str:
+        '''Returns a string representation of this camera
+        '''
         return f"'{self.agent.agent_id}' @ '{self.url}'"
 
-    def move_to_preset(self, preset):
+    def move_to_preset(self, preset: int):
+        '''Move the PTZ camera to the specified preset position
+        '''
         if self.type == CameraType.panasonic:
             params = {'cmd': f'#R{preset - 1:02}', 'res': 1}
             url = f'{self.url}/cgi-bin/aw_ptz'
@@ -91,6 +99,10 @@ class Camera:
         register_camera_move(self.url, preset)
 
     def update_position(self):
+        '''Check for currently active events with the camera's capture agent
+        and move the camera to the appropriate (active, inactive) position if
+        necessary.
+        '''
         agent_id = self.agent.agent_id
         event = self.agent.next_event()
 
