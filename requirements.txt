@@ -1,3 +1,4 @@
 confygure >= 0.1.0
 prometheus-client
+python-dateutil
 requests
