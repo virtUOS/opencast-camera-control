@@ -11,6 +11,9 @@ the camera is turned back to a neutral position.
 This allows you, for example, to automatically turn cameras to the wall when no
 recordings are active.
 
+https://github.com/virtUOS/opencast-camera-control/assets/1008395/a8e37229-f760-4a54-82b2-1a555c960736
+
+<small><i>(Camera moves when a one minute scheduled recording starts and returns to point at the wall at the end)</i></small>
 
 ## Getting started
 
