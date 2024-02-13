@@ -34,6 +34,10 @@ You can provide custom configuration files using the `--config` option:
 ❯ python -m occameracontrol --config custom-config.yml
 ```
 
+## Opencast User
+
+To improve security, you can limit the access rights for the Opencast user by
+creating a user which has only the role `ROLE_CAPTURE_AGENT` assigned.
 
 ## Metrics
 
