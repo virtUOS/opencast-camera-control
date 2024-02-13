@@ -61,3 +61,20 @@ agent_calendar_update_time{agent="test_agent"} 1.707571943100096e+09
 # TYPE camera_position gauge
 camera_position{camera="http://camera-2-panasonic.example.com"} 10.0
 ```
+
+## Docker
+
+We also provide a container image.
+A simple docker compose example would look like this
+
+```yaml
+---
+version: '3'
+services:
+  app:
+    image: ghcr.io/virtuos/opencast-camera-control:main
+    ports:
+      - '8000:8000'
+    volumes:
+      - './your_config.yml:/occameracontrol/config.yml'
+```
