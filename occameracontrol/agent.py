@@ -86,7 +86,7 @@ class Agent:
             events.append(event)
 
         # Make sure events are sorted
-        return sorted(events, key=lambda e: e.start, reverse=True)
+        return sorted(events, key=lambda e: e.start, reverse=False)
 
     def update_calendar(self):
         '''Get a calendar update fro Opencast
