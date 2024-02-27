@@ -59,6 +59,19 @@ def control_camera(camera: Camera):
             camera.update_position()
         time.sleep(1)
 
+def update_cameras(cameras: list[Camera]):
+    update_frequency = config_t(int, 'camera', 'update_frequency') or 60
+    error_handlers = {
+        camera.url: RequestErrorHandler(
+                camera.url,
+                f'Failed to communicate with camera {camera}')
+        for camera in cameras}
+    while True:
+        for camera in cameras:
+            with error_handlers[camera.url]:
+                camera.move_to_preset(camera.position)
+        time.sleep(update_frequency)
+    
 
 def main():
     parser = argparse.ArgumentParser(description='Opencast Camera Control')
@@ -96,9 +109,13 @@ def main():
 
     for camera in cameras:
         logger.info('Starting camera control for %s', camera)
-        control_truead = Thread(target=control_camera, args=(camera,))
-        threads.append(control_truead)
-        control_truead.start()
+        control_thread = Thread(target=control_camera, args=(camera,))
+        threads.append(control_thread)
+        control_thread.start()
+
+    camera_update_thread = Thread(target=update_cameras, args=(cameras,))
+    threads.append(camera_update_thread)
+    camera_update_thread.start()
 
     # Start delivering metrics
     start_metrics_exporter()
