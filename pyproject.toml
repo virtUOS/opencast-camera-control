@@ -25,4 +25,4 @@ Homepage = 'https://github.com/virtUOS/opencast-camera-control'
 Repository = 'https://github.com/virtUOS/opencast-camera-control'
 
 [project.scripts]
-occameracontrol = 'occameracontrol.__main__:'
+occameracontrol = 'occameracontrol.__main__:main'
