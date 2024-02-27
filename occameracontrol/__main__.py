@@ -59,6 +59,7 @@ def control_camera(camera: Camera):
             camera.update_position()
         time.sleep(1)
 
+
 def update_cameras(cameras: list[Camera]):
     update_frequency = config_t(int, 'camera', 'update_frequency') or 60
     error_handlers = {
@@ -71,7 +72,7 @@ def update_cameras(cameras: list[Camera]):
             with error_handlers[camera.url]:
                 camera.move_to_preset(camera.position)
         time.sleep(update_frequency)
-    
+
 
 def main():
     parser = argparse.ArgumentParser(description='Opencast Camera Control')
