@@ -1,0 +1,28 @@
+[build-system]
+requires = ['setuptools >= 61.0']
+build-backend = 'setuptools.build_meta'
+
+[project]
+name = 'opencast-camera-control'
+version = '0.1.0'
+authors = [
+    {name = 'Lars Kiesow', email = 'lkiesow@uos.de'},
+    {name = 'Jan-Matthis Niermann', email = 'janiermann@uos.de'}
+]
+description = 'Automated Camera Control for Opencast'
+readme = {file = 'README.md', content-type = 'text/markdown'}
+requires-python = ">=3.9"
+license = {file = 'LICENSE'}
+dependencies = [
+    'confygure>=0.1.0',
+    'prometheus-client',
+    'python-dateutil',
+    'requests'
+]
+
+[project.urls]
+Homepage = 'https://github.com/virtUOS/opencast-camera-control'
+Repository = 'https://github.com/virtUOS/opencast-camera-control'
+
+[project.scripts]
+opencast-camera-control = 'occameracontrol.__main__:main'
