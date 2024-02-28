@@ -1,10 +1,13 @@
+FROM python:3.12-slim as build
+COPY . /occameracontrol
+
 FROM python:3.12-slim
 EXPOSE 8000
-
-COPY . /occameracontrol
-WORKDIR /occameracontrol
-
-RUN pip install --no-cache-dir -r /occameracontrol/requirements.txt
+RUN --mount=type=bind,from=build,source=/occameracontrol,target=/occameracontrol \
+    --mount=type=tmpfs,destination=/tmp \
+    cp -r /occameracontrol /tmp \
+    && pip install --no-cache-dir /tmp/occameracontrol \
+    && cp /occameracontrol/camera-control.yml /etc/camera-control.yml
 
 USER nobody
-ENTRYPOINT [ "python",  "-m", "occameracontrol"]
+ENTRYPOINT [ "opencast-camera-control" ]

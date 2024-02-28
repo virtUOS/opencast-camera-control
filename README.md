@@ -80,5 +80,5 @@ services:
     ports:
       - '8000:8000'
     volumes:
-      - './your_config.yml:/occameracontrol/config.yml'
+      - './your_config.yml:/etc/camera-control.yml'
 ```
