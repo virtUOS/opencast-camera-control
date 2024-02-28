@@ -61,7 +61,8 @@ def control_camera(camera: Camera):
 
 
 def update_cameras(cameras: list[Camera]):
-    update_frequency = config_t(int, 'camera', 'update_frequency') or 60
+    update_frequency = config_t(int, 'camera_update_frequency') or 60
+    logger.info(str(update_frequency))
     error_handlers = {
         camera.url: RequestErrorHandler(
                 camera.url,
@@ -71,6 +72,7 @@ def update_cameras(cameras: list[Camera]):
         for camera in cameras:
             with error_handlers[camera.url]:
                 camera.move_to_preset(camera.position)
+        logger.debug('Camera Positions restored.')
         time.sleep(update_frequency)
 
 
@@ -98,6 +100,7 @@ def main():
         agent = Agent(agent_id)
         agents.append(agent)
         logger.debug('Configuring agent %s', agent_id)
+        print(agent_cameras)
         for camera in agent_cameras:
             cam = Camera(agent, **camera)
             logger.debug('Configuring camera: %s', cam)

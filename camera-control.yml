@@ -19,6 +19,10 @@ calendar:
   # Default: 604800 (7 days)
   cutoff: 604800
 
+# The frequency in which the cameras position should be updated in seconds
+# Default: 60
+camera_update_frequency: 60
+
 # Camera Configuration
 # Configure the capture agents to get the calendar for and a list of cameras to
 # control when a capture agent starts.
@@ -32,10 +36,6 @@ calendar:
 #     preset_active: Camera preset to move to when recording (default: 1)
 #     preset_inactive: Camera preset to move to when not recording (default: 10)
 camera:
-  # The frequency in which the cameras position should be updated in seconds
-  # Default: 60
-  update_frequency: 60
-  
   test-agent:
     - url: http://camera-panasonic.example.com
       type: panasonic
