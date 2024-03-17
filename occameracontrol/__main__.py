@@ -52,7 +52,7 @@ def control_camera(camera: Camera):
     active events.
     '''
     update_frequency = config_t(int, 'camera_update_frequency') or 30
-    logger.debug(f'Camera Update Frequency is set to {update_frequency}')
+    logger.debug('Camera Update Frequency is set to %d', update_frequency)
 
     error_handler = RequestErrorHandler(
             camera.url,
