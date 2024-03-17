@@ -115,15 +115,23 @@ class Camera:
         else:
             logger.info('[%s] No planned events', agent_id)
 
-        if event.active():
+        if event.active():  # active event
             if self.position != self.preset_active:
                 logger.info('[%s] Event `%s` started', agent_id, event.title)
                 logger.info('[%s] Moving to preset %i', agent_id,
                             self.preset_active)
                 self.move_to_preset(self.preset_active)
-
+            else:
+                logger.info('[%s] Reseting position to %i [ACTIVE]',
+                            agent_id, self.position)
+                self.move_to_preset(self.position)
         else:  # No active event
             if self.position != self.preset_inactive:
                 logger.info('[%s] Returning to preset %i', agent_id,
                             self.preset_inactive)
                 self.move_to_preset(self.preset_inactive)
+            # This part is very likely unnecessary
+            else:
+                logger.info('[%s] Reseting position to %i [INACTIVE]',
+                            agent_id, self.position)
+                self.move_to_preset(self.position)

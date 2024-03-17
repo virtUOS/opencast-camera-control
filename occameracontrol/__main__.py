@@ -51,28 +51,15 @@ def control_camera(camera: Camera):
     '''Control loop to trigger updating the camera position based on currently
     active events.
     '''
+    update_frequency = config_t(int, 'camera_update_frequency') or 30
+    logger.debug(f'Camera Update Frequency is set to {update_frequency}')
+
     error_handler = RequestErrorHandler(
             camera.url,
             f'Failed to communicate with camera {camera}')
     while True:
         with error_handler:
             camera.update_position()
-        time.sleep(1)
-
-
-def update_cameras(cameras: list[Camera]):
-    update_frequency = config_t(int, 'camera_update_frequency') or 60
-    logger.info(str(update_frequency))
-    error_handlers = {
-        camera.url: RequestErrorHandler(
-                camera.url,
-                f'Failed to communicate with camera {camera}')
-        for camera in cameras}
-    while True:
-        for camera in cameras:
-            with error_handlers[camera.url]:
-                camera.move_to_preset(camera.position)
-        logger.debug('Camera Positions restored.')
         time.sleep(update_frequency)
 
 
@@ -99,11 +86,8 @@ def main():
     for agent_id, agent_cameras in config_rt(dict, 'camera').items():
         agent = Agent(agent_id)
         agents.append(agent)
-        logger.debug('Configuring agent %s', agent_id)
-        print(agent_cameras)
         for camera in agent_cameras:
             cam = Camera(agent, **camera)
-            logger.debug('Configuring camera: %s', cam)
             cameras.append(cam)
 
     threads = []
@@ -116,10 +100,6 @@ def main():
         control_thread = Thread(target=control_camera, args=(camera,))
         threads.append(control_thread)
         control_thread.start()
-
-    camera_update_thread = Thread(target=update_cameras, args=(cameras,))
-    threads.append(camera_update_thread)
-    camera_update_thread.start()
 
     # Start delivering metrics
     start_metrics_exporter()
