@@ -2,8 +2,8 @@
 
 Control PTZ camera to move to certain presets when starting a scheduled recording.
 
-This tool communicated with [Opencast](https://opencast.org) to get scheduled
-evens for a list of configured capture agents. When an event starts, cameras
+This tool communicates with [Opencast](https://opencast.org) to get scheduled
+events for a list of configured capture agents. When an event starts, cameras
 configured to be part of the agent's setup are then automatically turned to an
 active position specified by a configurable camera preset. When the event ends,
 the camera is turned back to a neutral position.
@@ -33,6 +33,16 @@ You can provide custom configuration files using the `--config` option:
 ```
 ❯ python -m occameracontrol --config custom-config.yml
 ```
+
+## Supported Cameras
+
+The tool supports PTZ cameras from Panasonic and Sony.
+The following cameras have been confirmed to be working:
+
+- Panasonic AW-UE50
+- Panasonic AW-UE70
+- Sony SRG-300SE
+- Sony SRG-X120
 
 ## Opencast User
 
