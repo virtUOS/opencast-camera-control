@@ -16,6 +16,7 @@
 
 import argparse
 import logging
+import sys
 import time
 
 from confygure import setup, config_t, config_rt
@@ -77,6 +78,9 @@ def main():
         config_files = [args.config]
 
     setup(files=config_files, logger=['loglevel'])
+    if not config_t(dict):
+        print('Could not find a configuration file in', config_files)
+        sys.exit(1)
 
     cameras = []
     agents = []
