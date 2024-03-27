@@ -1,0 +1,104 @@
+name: Build RPMs
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        osversion:
+          - '9'
+    name: build (el${{ matrix.osversion }})
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/centos/centos:stream${{ matrix.osversion }}
+    steps:
+      - name: install tools
+        run: >
+          dnf install -y
+          createrepo
+          'dnf-command(builddep)'
+          git
+          gnupg
+          rpmdevtools
+          rpm-sign
+
+      - name: clone repository
+        uses: actions/checkout@v4
+
+      - name: prepare git
+        run: |
+          git config --global user.name "RPM Builder"
+          git config --global user.email "virtuos@uni-osnabrueck.de"
+
+      - name: prepare gpg
+        env:
+          GPG_KEY: ${{ secrets.GPG_KEY }}
+        run: |
+          echo "${GPG_KEY}" | gpg --import
+          echo '%_gpg_name D1D3C4C53BB1516C13C86647F3AC651D45D407D3' > ~/.rpmmacros
+
+      - name: get version
+        run: >
+          sed -n 's/^version *=[^0-9]*\(.*\). */%_camera_control_version \1/p'
+          pyproject.toml >> ~/.rpmmacros
+
+      - name: prepare build tree
+        run: |
+          rpmdev-setuptree
+
+      - name: copy service file
+        run: |
+          cp .github/rpm/opencast-camera-control.service ~/rpmbuild/SOURCES/
+
+      - name: install build dependencies
+        working-directory: .github/rpm/
+        run: |
+          dnf builddep -y opencast-camera-control.spec
+
+      - name: download sources
+        working-directory: .github/rpm/
+        run: |
+          spectool -gR opencast-camera-control.spec
+
+      - name: build rpm
+        working-directory: .github/rpm/
+        run: |
+          rpmbuild -ba opencast-camera-control.spec
+
+      - name: switch to repository branch
+        run: |
+          chown root:root .
+          git fetch
+          git checkout rpm-el${{ matrix.osversion }}
+
+      - name: sign rpms
+        run: |
+          rpmsign --addsign ~/rpmbuild/RPMS/noarch/*.rpm
+
+      - name: copy rpms to repository
+        run: |
+          cp -v ~/rpmbuild/RPMS/noarch/*.rpm .
+
+      - name: add new rpms
+        run: |
+          git add ./*.rpm
+
+      - name: update repository metadata
+        run: |
+          createrepo --update .
+          git add ./repodata/
+
+      - name: commit changes
+        run: |
+          git status
+          RPM="$(ls -1 ~/rpmbuild/RPMS/noarch/ | tail -n1)"
+          git diff --staged --quiet || git commit -m "Build ${RPM} $(date)"
+
+      - name: push updates
+        run: |
+          git remote -v
+          git push

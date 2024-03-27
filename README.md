@@ -66,6 +66,36 @@ agent_calendar_update_time{agent="test_agent"} 1.707571943100096e+09
 camera_position{camera="http://camera-2-panasonic.example.com"} 10.0
 ```
 
+
+## RPM Repository
+
+On RHEL 9 like distributions (CentOS Stream, Rocky, Alma, …) you can use the RPM repository to install Opencast Camera Control.
+Install the repository by adding a file `/etc/yum.repos.d/opencast-camera-control.repo`:
+
+```
+[opencast-camera-control]
+name = Opencast camera control el$releasever repository
+baseurl  = https://raw.githubusercontent.com/virtUOS/opencast-camera-control/rpm-el$releasever/
+enabled  = 1
+gpgcheck = 1
+gpgkey = https://raw.githubusercontent.com/virtUOS/opencast-camera-control/rpm-el$releasever/opencast-camera-control.key
+```
+
+Then activate the EPEL repository and install `opencast-camera-control`:
+
+```
+dnf install epel-release
+dnf install opencast-camera-control
+```
+
+The RPM packages provide a Systemd unit to run the tool as service:
+
+```
+systemctl start opencast-camera-control.service
+systemctl enable opencast-camera-control.service
+```
+
+
 ## Docker
 
 We also provide a container image.
