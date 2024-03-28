@@ -1,0 +1,10 @@
+[Unit]
+Description=Opencast Camera Control
+Documentation=https://github.com/virtUOS/opencast-camera-control
+Wants=network.target
+
+[Service]
+Type=simple
+User=opencastcamera
+ExecStart=/usr/bin/opencast-camera-control
+Restart=always
