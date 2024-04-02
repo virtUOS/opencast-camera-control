@@ -69,4 +69,4 @@ metrics:
 # Configure the log level
 # Available levels are: debug, info, warning, error, critical)
 # Default: info
-loglevel: debug
+loglevel: info
