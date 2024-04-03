@@ -18,8 +18,8 @@ https://github.com/virtUOS/opencast-camera-control/assets/1008395/a8e37229-f760-
 ## Getting started
 
 ```
-❯ pip install -r requirements.txt
-❯ python -m occameracontrol
+❯ pip install opencast-camera-control
+❯ opencast-camera-control
 ```
 
 
@@ -28,10 +28,16 @@ https://github.com/virtUOS/opencast-camera-control/assets/1008395/a8e37229-f760-
 Take a look at the [camera-control.yml](camera-control.yml) configuration file.
 All available options are documented in there.
 
+The tool uses the first configuration it can find. It looks for files in the following order:
+
+- `./camera-control.yml`
+- `~/camera-control.yml`
+- `/etc/camera-control.yml`
+
 You can provide custom configuration files using the `--config` option:
 
 ```
-❯ python -m occameracontrol --config custom-config.yml
+❯ opencast-camera-control --config custom-config.yml
 ```
 
 ## Supported Cameras
