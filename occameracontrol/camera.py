@@ -83,7 +83,7 @@ class Camera:
 
         elif self.type == CameraType.sony:
             url = f'{self.url}/command/presetposition.cgi'
-            params = {'PresetCall': preset}
+            params = {'PresetCall': f'{preset},24'}
             headers = {'referer': f'{self.url}/'}
             auth = HTTPDigestAuth(self.user, self.password) \
                 if self.user and self.password else None
