@@ -106,14 +106,15 @@ class Camera:
         agent_id = self.agent.agent_id
         event = self.agent.next_event()
 
+        level = logging.DEBUG if int(time.time()) % 60 else logging.INFO
         if event.future():
-            logger.info('[%s] Next event `%s` starts in %i seconds',
-                        agent_id, event.title, event.start - time.time())
+            logger.log(level, '[%s] Next event `%s` starts in %i seconds',
+                       agent_id, event.title[:40], event.start - time.time())
         elif event.active():
-            logger.info('[%s] Active event `%s` ends in %i seconds',
-                        agent_id, event.title, event.end - time.time())
+            logger.log(level, '[%s] Active event `%s` ends in %i seconds',
+                       agent_id, event.title[:40], event.end - time.time())
         else:
-            logger.info('[%s] No planned events', agent_id)
+            logger.log(level, '[%s] No planned events', agent_id)
 
         if event.active():
             if self.position != self.preset_active:
