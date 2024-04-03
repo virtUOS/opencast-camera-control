@@ -100,8 +100,17 @@ def start_metrics_exporter():
     if not config_t(bool, 'metrics', 'enabled'):
         return
 
-    start_http_server(
-        port=config_t(int, 'metrics', 'port') or 8000,
-        addr=config_t(str, 'metrics', 'addr') or '127.0.0.1',
-        certfile=config_t(str, 'metrics', 'certfile'),
-        keyfile=config_t(str, 'metrics', 'keyfile'))
+    supported_args = start_http_server.__code__.co_varnames
+    if 'certfile' in supported_args:
+        start_http_server(
+            port=config_t(int, 'metrics', 'port') or 8000,
+            addr=config_t(str, 'metrics', 'addr') or '127.0.0.1',
+            certfile=config_t(str, 'metrics', 'certfile'),
+            keyfile=config_t(str, 'metrics', 'keyfile'))
+    else:
+        if config_t(str, 'metrics', 'certfile'):
+            logger.warn('Old version of Prometheus client library does not yet'
+                        ' support TLS. Provided certificate will be ignored.')
+        start_http_server(
+            port=config_t(int, 'metrics', 'port') or 8000,
+            addr=config_t(str, 'metrics', 'addr') or '127.0.0.1')
