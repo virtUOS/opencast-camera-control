@@ -71,7 +71,6 @@ class RequestErrorHandler():
         '''Handler for then exiting the `with` block. Takes care of catching
         errors, logging them and updating the metrics.
         '''
-        print(exc_type)
         if exc_type in self.err_msg_only:
             logger.error('%s: %s', self.message, exc_value)
             request_errors.labels(self.resource, exc_type.__name__).inc()
