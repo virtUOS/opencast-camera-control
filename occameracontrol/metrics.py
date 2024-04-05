@@ -15,6 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import logging
+import requests
 import time
 
 from confygure import config_t
@@ -50,6 +51,10 @@ class RequestErrorHandler():
     the error from propagating any further.
     '''
 
+    err_msg_only = (
+            requests.exceptions.ConnectionError,
+            requests.exceptions.HTTPError)
+
     def __init__(self, resource, message):
         '''Create a RequestErrorHandler instance.
 
@@ -66,7 +71,10 @@ class RequestErrorHandler():
         '''Handler for then exiting the `with` block. Takes care of catching
         errors, logging them and updating the metrics.
         '''
-        if exc_type:
+        if exc_type in self.err_msg_only:
+            logger.error('%s: %s', self.message, exc_value)
+            request_errors.labels(self.resource, exc_type.__name__).inc()
+        elif exc_type:
             logger.exception(self.message)
             request_errors.labels(self.resource, exc_type.__name__).inc()
         # Silence Exception types
