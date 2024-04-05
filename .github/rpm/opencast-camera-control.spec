@@ -68,7 +68,7 @@ if [ ! $(getent group %{gid}) ]; then
 	groupadd -r %{gid} > /dev/null 2>&1 || :
 fi
 if [ ! $(getent passwd %{uid}) ]; then
-	useradd -M -r -d /srv/opencast -g %{gid} %{uid} > /dev/null 2>&1 || :
+	useradd -M -r -g %{gid} %{uid} > /dev/null 2>&1 || :
 fi
 
 
