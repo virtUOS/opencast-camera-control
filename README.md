@@ -88,7 +88,7 @@ camera_position{camera="http://camera-2-panasonic.example.com"} 10.0
 On RHEL 9 like distributions (CentOS Stream, Rocky, Alma, …) you can use the RPM repository to install Opencast Camera Control.
 Install the repository by adding a file `/etc/yum.repos.d/opencast-camera-control.repo`:
 
-```
+```ini
 [opencast-camera-control]
 name = Opencast camera control el$releasever repository
 baseurl  = https://raw.githubusercontent.com/virtUOS/opencast-camera-control/rpm-el$releasever/
