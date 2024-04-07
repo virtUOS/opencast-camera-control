@@ -1,3 +1,5 @@
+---
+
 opencast:
   # Opencast server to talk to
   server: https://develop.opencast.org
@@ -47,8 +49,8 @@ camera:
 
 metrics:
   # Enable metrics to start a web server and provide OpenMetrics data
-  # Default: False
-  enabled: True
+  # Default: false
+  enabled: true
 
   # The TCP port to listen to
   # Default: 8000
