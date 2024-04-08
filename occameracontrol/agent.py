@@ -60,6 +60,7 @@ class Agent:
     '''
     agent_id: str
     events: list[Event] = []
+    calendar_initialized: bool = False
 
     def __init__(self, agent_id: str):
         self.agent_id = agent_id
@@ -108,6 +109,7 @@ class Agent:
 
         self.events = self.parse_calendar(calendar)
         register_calendar_update(self.agent_id)
+        self.calendar_initialized = True
 
     def active_events(self):
         '''Return a list of active events
