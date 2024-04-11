@@ -47,6 +47,8 @@ class Camera:
     user: Optional[str] = None
     preset_active: int = 1
     preset_inactive: int = 10
+    last_updated: int = 0
+    update_frequency: int = 60
 
     def __init__(self,
                  agent: Agent,
@@ -97,6 +99,7 @@ class Camera:
 
         self.position = preset
         register_camera_move(self.url, preset)
+        self.last_updated = int(time.time())
 
     def update_position(self):
         '''Check for currently active events with the camera's capture agent
@@ -121,17 +124,14 @@ class Camera:
                 logger.info('[%s] Moving to preset %i', agent_id,
                             self.preset_active)
                 self.move_to_preset(self.preset_active)
-            else:
-                logger.info('[%s] Reseting position to %i [ACTIVE]',
-                            agent_id, self.position)
-                self.move_to_preset(self.position)
         else:  # No active event
             if self.position != self.preset_inactive:
                 logger.info('[%s] Returning to preset %i', agent_id,
                             self.preset_inactive)
                 self.move_to_preset(self.preset_inactive)
-            # This part is very likely unnecessary
-            else:
-                logger.info('[%s] Reseting position to %i [INACTIVE]',
-                            agent_id, self.position)
-                self.move_to_preset(self.position)
+                
+        if int(time.time()) - self.last_updated >= self.update_frequency:
+            logger.info('[%s] Updating position (Pos. %i)', agent_id,
+                        self.position)
+            self.move_to_preset(self.position)
+            #self.last_updated = int(time.time())
