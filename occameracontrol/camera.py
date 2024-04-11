@@ -129,9 +129,7 @@ class Camera:
                 logger.info('[%s] Returning to preset %i', agent_id,
                             self.preset_inactive)
                 self.move_to_preset(self.preset_inactive)
-                
         if int(time.time()) - self.last_updated >= self.update_frequency:
             logger.info('[%s] Updating position (Pos. %i)', agent_id,
                         self.position)
             self.move_to_preset(self.position)
-            #self.last_updated = int(time.time())
