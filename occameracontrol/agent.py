@@ -125,3 +125,22 @@ class Agent:
         if not events:
             return Event('', 0, 0)
         return events[0]
+
+    def verify_agent(self):
+        '''Verify that an agent exists when it is created
+        '''
+        server = config_rt(str, 'opencast', 'server').rstrip('/')
+        username = config_rt(str, 'opencast', 'username')
+        password = config_rt(str, 'opencast', 'password')
+        auth = (username, password)
+        url = f'{server}/capture-admin/agents/{self.agent_id}.json'
+        logger.info('Verification of agent `%s`', self.agent_id)
+
+        # Not sure if throwing an HTTPError is the best thing to do here
+        response = requests.get(url, auth=auth, timeout=5)
+        response.raise_for_status()
+
+        if response.status_code != 200:
+            logger.critical(f'Agent {self.agent_id} does not exist.')
+        else:
+            logger.debug(f'Agent {self.agent_id} verified.')
