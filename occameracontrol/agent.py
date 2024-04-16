@@ -134,13 +134,15 @@ class Agent:
         username = config_rt(str, 'opencast', 'username')
         password = config_rt(str, 'opencast', 'password')
         auth = (username, password)
-        url = url_parse.quote(f'{server}/capture-admin/agents/{self.agent_id}.json')
+        url = url_parse.quote(
+            f'{server}/capture-admin/agents/{self.agent_id}.json')
         logger.info('Verification of agent `%s`', self.agent_id)
 
         response = requests.get(url, auth=auth, timeout=5)
         try:
             response.raise_for_status()
-        except Exception as e:
-            raise LookupError(f'Agent {self.agent_id} does not exist in Opencast.')
-        
+        except Exception:
+            raise LookupError(
+                f'Agent {self.agent_id} does not exist in Opencast.')
+
         logger.debug(f'Agent {self.agent_id} verified.')
