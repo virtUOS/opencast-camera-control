@@ -66,7 +66,7 @@ A simple docker compose example would look like this
 ---
 services:
   camera-control:
-    image: ghcr.io/virtuos/opencast-camera-control:0.2.0
+    image: ghcr.io/virtuos/opencast-camera-control:0.3.0
     container_name: opencast-camera-control
     ports:
       - '8000:8000'
