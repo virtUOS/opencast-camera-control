@@ -15,11 +15,63 @@ https://github.com/virtUOS/opencast-camera-control/assets/1008395/a8e37229-f760-
 
 <small><i>(Camera moves when a one minute scheduled recording starts and returns to point at the wall at the end)</i></small>
 
-## Getting started
+## Installation
+
+### PIP
+
+We release Opencast Camera Control via [the Python Package Index](https://pypi.org/).
+This means you can easily install the tool via pip:
 
 ```
 ❯ pip install opencast-camera-control
 ❯ opencast-camera-control
+```
+
+
+### RPM Repository
+
+On RHEL 9 like distributions (CentOS Stream, Rocky, Alma, …) you can use the RPM repository to install Opencast Camera Control.
+Install the repository by adding a file `/etc/yum.repos.d/opencast-camera-control.repo`:
+
+```ini
+[opencast-camera-control]
+name = Opencast camera control el$releasever repository
+baseurl  = https://raw.githubusercontent.com/virtUOS/opencast-camera-control/rpm-el$releasever/
+enabled  = 1
+gpgcheck = 1
+gpgkey = https://raw.githubusercontent.com/virtUOS/opencast-camera-control/rpm-el$releasever/opencast-camera-control.key
+```
+
+Then activate the EPEL repository and install `opencast-camera-control`:
+
+```
+❯ dnf install -y epel-release
+❯ dnf install -y opencast-camera-control
+```
+
+The RPM packages provide a Systemd unit to run the tool as service:
+
+```
+❯ systemctl start opencast-camera-control.service
+❯ systemctl enable opencast-camera-control.service
+```
+
+
+## Container
+
+We also provide a container image.
+A simple docker compose example would look like this
+
+```yaml
+---
+services:
+  camera-control:
+    image: ghcr.io/virtuos/opencast-camera-control:0.2.0
+    container_name: opencast-camera-control
+    ports:
+      - '8000:8000'
+    volumes:
+      - './your_config.yml:/etc/camera-control.yml'
 ```
 
 
@@ -80,51 +132,4 @@ agent_calendar_update_time{agent="test_agent"} 1.707571943100096e+09
 # HELP camera_position Last position (preset number) a camera moved to
 # TYPE camera_position gauge
 camera_position{camera="http://camera-2-panasonic.example.com"} 10.0
-```
-
-
-## RPM Repository
-
-On RHEL 9 like distributions (CentOS Stream, Rocky, Alma, …) you can use the RPM repository to install Opencast Camera Control.
-Install the repository by adding a file `/etc/yum.repos.d/opencast-camera-control.repo`:
-
-```ini
-[opencast-camera-control]
-name = Opencast camera control el$releasever repository
-baseurl  = https://raw.githubusercontent.com/virtUOS/opencast-camera-control/rpm-el$releasever/
-enabled  = 1
-gpgcheck = 1
-gpgkey = https://raw.githubusercontent.com/virtUOS/opencast-camera-control/rpm-el$releasever/opencast-camera-control.key
-```
-
-Then activate the EPEL repository and install `opencast-camera-control`:
-
-```
-dnf install epel-release
-dnf install opencast-camera-control
-```
-
-The RPM packages provide a Systemd unit to run the tool as service:
-
-```
-systemctl start opencast-camera-control.service
-systemctl enable opencast-camera-control.service
-```
-
-
-## Docker
-
-We also provide a container image.
-A simple docker compose example would look like this
-
-```yaml
----
-version: '3'
-services:
-  app:
-    image: ghcr.io/virtuos/opencast-camera-control:main
-    ports:
-      - '8000:8000'
-    volumes:
-      - './your_config.yml:/etc/camera-control.yml'
 ```
