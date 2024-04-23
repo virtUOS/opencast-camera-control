@@ -88,8 +88,10 @@ def main():
     for agent_id, agent_cameras in config_rt(dict, 'camera').items():
         agent = Agent(agent_id)
         agents.append(agent)
+        logger.debug('Configuring agent %s', agent_id)
         for camera in agent_cameras:
             cam = Camera(agent, **camera)
+            logger.debug('Configuring camera: %s', cam)
             cameras.append(cam)
 
     threads = []
