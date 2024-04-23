@@ -49,7 +49,7 @@ class Camera:
     preset_active: int = 1
     preset_inactive: int = 10
     last_updated: float = 0.0
-    update_frequency: int = 60
+    update_frequency: int = 300
 
     def __init__(self,
                  agent: Agent,
@@ -66,7 +66,7 @@ class Camera:
         self.password = password
         self.preset_active = preset_active
         self.preset_inactive = preset_inactive
-        self.update_frequency = config_t(int, 'camera_update_frequency') or 60
+        self.update_frequency = config_t(int, 'camera_update_frequency') or 300
 
     def __str__(self) -> str:
         '''Returns a string representation of this camera

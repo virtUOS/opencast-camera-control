@@ -21,7 +21,7 @@ calendar:
 
 # The frequency in which the cameras position should be updated in seconds
 # Default: 60
-camera_update_frequency: 60
+camera_update_frequency: 300
 
 # Camera Configuration
 # Configure the capture agents to get the calendar for and a list of cameras to
