@@ -125,3 +125,22 @@ class Agent:
         if not events:
             return Event('', 0, 0)
         return events[0]
+
+    def verify_agent(self):
+        '''Verify that an agent exists when it is created
+        '''
+        server = config_rt(str, 'opencast', 'server').rstrip('/')
+        username = config_rt(str, 'opencast', 'username')
+        password = config_rt(str, 'opencast', 'password')
+        auth = (username, password)
+        url = f'{server}/capture-admin/agents/{self.agent_id}.json'
+        logger.info('Verification of agent `%s`', self.agent_id)
+
+        response = requests.get(url, auth=auth, timeout=5)
+        try:
+            response.raise_for_status()
+        except Exception:
+            raise LookupError(
+                f'Agent {self.agent_id} does not exist in Opencast.')
+
+        logger.debug(f'Agent {self.agent_id} verified.')

@@ -86,6 +86,7 @@ def main():
     agents = []
     for agent_id, agent_cameras in config_rt(dict, 'camera').items():
         agent = Agent(agent_id)
+        agent.verify_agent()
         agents.append(agent)
         logger.debug('Configuring agent %s', agent_id)
         for camera in agent_cameras:
