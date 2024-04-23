@@ -117,9 +117,14 @@ class Camera:
         necessary.
         '''
         agent_id = self.agent.agent_id
+        level = logging.DEBUG if int(time.time()) % 60 else logging.INFO
+
+        while not self.agent.calendar_initialized:
+            logger.log(level, '[%s] Calendar not yet initialized…', agent_id)
+            time.sleep(1)
+
         event = self.agent.next_event()
 
-        level = logging.DEBUG if int(time.time()) % 60 else logging.INFO
         if event.future():
             logger.log(level, '[%s] Next event `%s` starts in %s',
                        agent_id, event.title[:40], self.from_now(event.start))
