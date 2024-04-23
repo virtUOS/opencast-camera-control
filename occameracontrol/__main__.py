@@ -51,11 +51,6 @@ def control_camera(camera: Camera):
     '''Control loop to trigger updating the camera position based on currently
     active events.
     '''
-    update_frequency = config_t(int, 'camera_update_frequency') or 60
-    logger.debug('Camera Update Frequency is set to %d', update_frequency)
-    # Maybe this could be improved by allowing for individual
-    # update frequencies or by handling it as a function parameter
-    camera.update_frequency = update_frequency
     error_handler = RequestErrorHandler(
             camera.url,
             f'Failed to communicate with camera {camera}')

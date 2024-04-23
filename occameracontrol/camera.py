@@ -18,6 +18,7 @@ import logging
 import requests
 import time
 
+from confygure import config_t
 from enum import Enum
 from requests.auth import HTTPDigestAuth
 from typing import Optional
@@ -65,6 +66,7 @@ class Camera:
         self.password = password
         self.preset_active = preset_active
         self.preset_inactive = preset_inactive
+        self.update_frequency = config_t(int, 'camera_update_frequency') or 60
 
     def __str__(self) -> str:
         '''Returns a string representation of this camera
