@@ -134,8 +134,7 @@ class Agent:
         username = config_rt(str, 'opencast', 'username')
         password = config_rt(str, 'opencast', 'password')
         auth = (username, password)
-        url = url_parse.quote(
-            f'{server}/capture-admin/agents/{self.agent_id}.json')
+        url = f'{server}/capture-admin/agents/{self.agent_id}.json'
         logger.info('Verification of agent `%s`', self.agent_id)
 
         response = requests.get(url, auth=auth, timeout=5)
