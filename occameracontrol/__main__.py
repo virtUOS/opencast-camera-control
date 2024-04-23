@@ -101,9 +101,9 @@ def main():
 
     for camera in cameras:
         logger.info('Starting camera control for %s', camera)
-        control_truead = Thread(target=control_camera, args=(camera,))
-        threads.append(control_truead)
-        control_truead.start()
+        control_thread = Thread(target=control_camera, args=(camera,))
+        threads.append(control_thread)
+        control_thread.start()
 
     # Start delivering metrics
     start_metrics_exporter()

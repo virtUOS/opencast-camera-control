@@ -18,6 +18,7 @@ import logging
 import requests
 import time
 
+from confygure import config_t
 from enum import Enum
 from requests.auth import HTTPDigestAuth
 from typing import Optional
@@ -47,6 +48,8 @@ class Camera:
     user: Optional[str] = None
     preset_active: int = 1
     preset_inactive: int = 10
+    last_updated: float = 0.0
+    update_frequency: int = 300
 
     def __init__(self,
                  agent: Agent,
@@ -63,6 +66,7 @@ class Camera:
         self.password = password
         self.preset_active = preset_active
         self.preset_inactive = preset_inactive
+        self.update_frequency = config_t(int, 'camera_update_frequency') or 300
 
     def __str__(self) -> str:
         '''Returns a string representation of this camera
@@ -97,6 +101,7 @@ class Camera:
 
         self.position = preset
         register_camera_move(self.url, preset)
+        self.last_updated = time.time()
 
     def update_position(self):
         '''Check for currently active events with the camera's capture agent
@@ -116,15 +121,19 @@ class Camera:
         else:
             logger.log(level, '[%s] No planned events', agent_id)
 
-        if event.active():
+        if event.active():  # active event
             if self.position != self.preset_active:
                 logger.info('[%s] Event `%s` started', agent_id, event.title)
                 logger.info('[%s] Moving to preset %i', agent_id,
                             self.preset_active)
                 self.move_to_preset(self.preset_active)
-
         else:  # No active event
             if self.position != self.preset_inactive:
                 logger.info('[%s] Returning to preset %i', agent_id,
                             self.preset_inactive)
                 self.move_to_preset(self.preset_inactive)
+
+        if time.time() - self.last_updated >= self.update_frequency:
+            logger.info('[%s] Re-sending preset %i to camera', agent_id,
+                        self.position)
+            self.move_to_preset(self.position)
