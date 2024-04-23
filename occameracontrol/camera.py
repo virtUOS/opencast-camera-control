@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import datetime
 import logging
 import requests
 import time
@@ -98,6 +99,13 @@ class Camera:
         self.position = preset
         register_camera_move(self.url, preset)
 
+    def from_now(self, ts: float) -> str:
+        '''Get a string representation of the time until the provided time
+        stamp is reached.
+        '''
+        seconds = int(ts - time.time())  # seconds are enough accuracy
+        return str(datetime.timedelta(seconds=seconds))
+
     def update_position(self):
         '''Check for currently active events with the camera's capture agent
         and move the camera to the appropriate (active, inactive) position if
@@ -108,11 +116,11 @@ class Camera:
 
         level = logging.DEBUG if int(time.time()) % 60 else logging.INFO
         if event.future():
-            logger.log(level, '[%s] Next event `%s` starts in %i seconds',
-                       agent_id, event.title[:40], event.start - time.time())
+            logger.log(level, '[%s] Next event `%s` starts in %s',
+                       agent_id, event.title[:40], self.from_now(event.start))
         elif event.active():
-            logger.log(level, '[%s] Active event `%s` ends in %i seconds',
-                       agent_id, event.title[:40], event.end - time.time())
+            logger.log(level, '[%s] Active event `%s` ends in %s',
+                       agent_id, event.title[:40], self.from_now(event.end))
         else:
             logger.log(level, '[%s] No planned events', agent_id)
 
