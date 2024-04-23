@@ -131,6 +131,5 @@ class Camera:
                 self.move_to_preset(self.preset_inactive)
 
         if time.time() - self.last_updated >= self.update_frequency:
-            logger.info('[%s] Updating position (Pos. %i)', agent_id,
-                        self.position)
+            logger.info('[%s] Staying at preset %i', agent_id, self.position)
             self.move_to_preset(self.position)
