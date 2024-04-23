@@ -20,7 +20,6 @@ import time
 
 from confygure import config_t, config_rt
 from dateutil.parser import parse
-from urllib import parse as url_parse
 
 from occameracontrol.metrics import register_calendar_update
 
