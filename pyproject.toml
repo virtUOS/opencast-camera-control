@@ -26,3 +26,6 @@ Repository = 'https://github.com/virtUOS/opencast-camera-control'
 
 [project.scripts]
 opencast-camera-control = 'occameracontrol.__main__:main'
+
+[tool.setuptools]
+packages = ['occameracontrol']
