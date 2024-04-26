@@ -21,8 +21,10 @@ calendar:
   # Default: 604800 (7 days)
   cutoff: 604800
 
-# The frequency in which the cameras position should be updated in seconds
-# Default: 60
+# The frequency in which to re-send the command to move the cameras to the
+# desired position in seconds. This ensure the camera position is corrected
+# eventually, even if there was an unexpected error.
+# Default: 300
 camera_update_frequency: 300
 
 # Camera Configuration
