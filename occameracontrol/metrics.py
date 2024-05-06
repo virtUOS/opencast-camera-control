@@ -53,7 +53,8 @@ class RequestErrorHandler():
 
     err_msg_only = (
             requests.exceptions.ConnectionError,
-            requests.exceptions.HTTPError)
+            requests.exceptions.HTTPError,
+            requests.exceptions.ReadTimeout)
 
     def __init__(self, resource, message):
         '''Create a RequestErrorHandler instance.
