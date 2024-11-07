@@ -25,18 +25,26 @@ from prometheus_client import start_http_server
 
 logger = logging.getLogger(__name__)
 
-request_errors = Counter('request_errors',
-                         'Number of errors related to HTTP requests',
-                         ('ressource', 'type'))
-agent_calendar_update_total = Gauge('agent_calendar_update_total',
-                                    'Nuber of calendar update',
-                                    ('agent',))
-agent_calendar_update_time = Gauge('agent_calendar_update_time',
-                                   'Time of the last calendar update',
-                                   ('agent',))
-camera_position = Gauge('camera_position',
-                        'Last position (preset number) a camera moved to',
-                        ('camera',))
+request_errors = Counter(
+        'request_errors',
+        'Number of errors related to HTTP requests',
+        ('ressource', 'type'))
+agent_calendar_update_total = Gauge(
+        'agent_calendar_update_total',
+        'Nuber of calendar update',
+        ('agent',))
+agent_calendar_update_time = Gauge(
+        'agent_calendar_update_time',
+        'Time of the last calendar update',
+        ('agent',))
+camera_position = Gauge(
+        'camera_position',
+        'Last position (preset number) a camera moved to',
+        ('camera',))
+camera_position_expected = Gauge(
+        'camera_position_expected',
+        'The position (preset number) a camera should be in',
+        ('camera',))
 
 
 class RequestErrorHandler():
@@ -94,12 +102,22 @@ def register_calendar_update(agent_id: str):
 
 def register_camera_move(camera: str, position: int):
     '''Update metrics for when a camera move has happened. This ensures the
-    position the camera is available as part of the metrics.
+    position of the camera is available as part of the metrics.
 
     :param camera: Camera identifier
     :param position: New camera position
     '''
     camera_position.labels(camera).set(position)
+
+
+def register_camera_expectation(camera: str, position: int):
+    '''Update metrics for when a camera is supposed to move. This ensures the
+    position the camera is expected in is available as part of the metrics.
+
+    :param camera: Camera identifier
+    :param position: New camera position
+    '''
+    camera_position_expected.labels(camera).set(position)
 
 
 def start_metrics_exporter():
