@@ -74,6 +74,36 @@ class Camera:
         '''
         return f"'{self.agent.agent_id}' @ '{self.url}'"
 
+    def activate_camera(self, on=True):
+        """Activate the camera or put it into standby mode.
+        parameters:
+        on: bool - True to activate the camera, False to deactivate it. default is True.
+        """
+        if self.type == CameraType.panasonic:
+            url = f'{self.url}/cgi-bin/aw_ptz'
+            command = '#On' if on else '#Of'
+            params = {'cmd': command, 'res': 1}
+            auth = (self.user, self.password) \
+                if self.user and self.password else None
+            logger.debug('GET %s with params: %s', url, params)
+            response = requests.get(url, auth=auth, params=params, timeout=5)
+            response.raise_for_status()
+
+        elif self.type == CameraType.sony:
+            url = f'{self.url}/command/main.cgi'
+            command = 'on' if on else 'standby'
+            params = {'System': command}
+            headers = {'referer': f'{self.url}/'}
+            auth = HTTPDigestAuth(self.user, self.password) \
+                if self.user and self.password else None
+            logger.debug('GET %s with params: %s', url, params)
+            response = requests.get(url,
+                                    auth=auth,
+                                    headers=headers,
+                                    params=params,
+                                    timeout=5)
+            response.raise_for_status()
+
     def move_to_preset(self, preset: int):
         '''Move the PTZ camera to the specified preset position
         '''
@@ -139,14 +169,17 @@ class Camera:
                 logger.info('[%s] Event `%s` started', agent_id, event.title)
                 logger.info('[%s] Moving to preset %i', agent_id,
                             self.preset_active)
+                self.activate_camera()
                 self.move_to_preset(self.preset_active)
         else:  # No active event
             if self.position != self.preset_inactive:
                 logger.info('[%s] Returning to preset %i', agent_id,
                             self.preset_inactive)
+                self.activate_camera()
                 self.move_to_preset(self.preset_inactive)
 
         if time.time() - self.last_updated >= self.update_frequency:
             logger.info('[%s] Re-sending preset %i to camera', agent_id,
                         self.position)
+            self.activate_camera()
             self.move_to_preset(self.position)
