@@ -76,8 +76,7 @@ class Camera:
 
     def activate_camera(self, on=True):
         """Activate the camera or put it into standby mode.
-        parameters:
-        on: bool - True to activate the camera, False to deactivate it. default is True.
+        :param bool on: camera should be online or standby (default: True)
         """
         if self.type == CameraType.panasonic:
             url = f'{self.url}/cgi-bin/aw_ptz'
