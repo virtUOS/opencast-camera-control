@@ -4,7 +4,7 @@ build-backend = 'setuptools.build_meta'
 
 [project]
 name = 'opencast-camera-control'
-version = '0.3.0'
+version = '0.4.0'
 authors = [
     {name = 'Lars Kiesow', email = 'lkiesow@uos.de'},
     {name = 'Jan-Matthis Niermann', email = 'janiermann@uos.de'}
