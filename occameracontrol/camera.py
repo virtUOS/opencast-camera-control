@@ -25,7 +25,8 @@ from requests.auth import HTTPDigestAuth
 from typing import Optional
 
 from occameracontrol.agent import Agent
-from occameracontrol.metrics import register_camera_move
+from occameracontrol.metrics import register_camera_move, \
+        register_camera_expectation
 
 
 logger = logging.getLogger(__name__)
@@ -106,6 +107,7 @@ class Camera:
     def move_to_preset(self, preset: int):
         '''Move the PTZ camera to the specified preset position
         '''
+        register_camera_expectation(self.url, preset)
         if self.type == CameraType.panasonic:
             params = {'cmd': f'#R{preset - 1:02}', 'res': 1}
             url = f'{self.url}/cgi-bin/aw_ptz'
