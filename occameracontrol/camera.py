@@ -84,7 +84,10 @@ class Camera:
             TODO: Which panasonic models do we have? Maybe there is a difference for other models? 
             
         For Sony camera:
-        TODO    
+            0   if      Standby
+            1   if      On  
+
+            -1  if      Something went wrong    
         """
         
         if self.type == CameraType.panasonic:
@@ -99,8 +102,24 @@ class Camera:
             state = response.content.decode()
             return state.removeprefix('p')
         elif self.type == CameraType.sony:
-            # TODO
-            return -1
+            url = f'{self.url}/command/inquiry.cgi'
+            params = {'inq': 'system'}
+            headers = {'referer': f'{self.url}/'}
+            auth = HTTPDigestAuth(self.user, self.password) \
+                if self.user and self.password else None
+            logger.debug('GET %s with params: %s', url, params)
+            response = requests.get(url,
+                                    auth=auth,
+                                    headers=headers,
+                                    params=params,
+                                    timeout=5)
+            response.raise_for_status()
+            values = response.content.decode().split("&")
+            state = -1
+            for v in values:
+                if "Power" in v: 
+                    state = 1 if v.removeprefix("Power=")[1] == 'on' else state = 0
+            return state
 
     def activate_camera(self, on=True):
         """Activate the camera or put it into standby mode.
