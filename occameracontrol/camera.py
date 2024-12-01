@@ -75,6 +75,33 @@ class Camera:
         '''
         return f"'{self.agent.agent_id}' @ '{self.url}'"
 
+    def is_standby(self) -> int:
+        """Retrieve whether or not the camera is in Standby.
+        For Panasonic camera AW-UE70:
+            0   if      Standby
+            1   if      On  
+            3   if      Transferring from Standby to On
+            TODO: Which panasonic models do we have? Maybe there is a difference for other models? 
+            
+        For Sony camera:
+        TODO    
+        """
+        
+        if self.type == CameraType.panasonic:
+            url = f'{self.url}/cgi-bin/aw_ptz'
+            command = "#O"
+            params = {'cmd':command, 'res':1}
+            auth = (self.user, self.password) \
+                if self.user and self.password else None
+            logger.debug('GET %s with params: %s', url, params)
+            response = requests.get(url, auth=auth, params=params, timeout=5)
+            response.raise_for_status()
+            state = response.content.decode()
+            return state.removeprefix('p')
+        elif self.type == CameraType.sony:
+            # TODO
+            return -1
+
     def activate_camera(self, on=True):
         """Activate the camera or put it into standby mode.
         :param bool on: camera should be online or standby (default: True)
