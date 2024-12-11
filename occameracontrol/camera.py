@@ -129,17 +129,14 @@ class Camera:
                                     timeout=5)
             response.raise_for_status()
             values = response.content.decode().split("&")
-            state = -1
+            state = False
             for v in values:
                 if "Power" in v:
                     if v.removeprefix("Power=")[1] == 'on':
-                        state = True
+                        return True
                     else:
-                        state = False
-            return state
-
-        # Else case
-        return -1
+                        return False
+        return False
 
     def activate_camera(self, on=True):
         """Activate the camera or put it into standby mode.
