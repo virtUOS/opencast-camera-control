@@ -75,7 +75,7 @@ class Camera:
         '''
         return f"'{self.agent.agent_id}' @ '{self.url}'"
 
-    def is_standby(self) -> bool:
+    def is_standby(self):
         """Retrieve whether or not the camera is in Standby.
         For Panasonic camera AW-UE70:
             0   if      Standby
@@ -113,8 +113,7 @@ class Camera:
                     timeout=5)
                 response.raise_for_status()
                 state = int(response.content.decode())
-                state = bool(state)
-            return state
+            return bool(state)
 
         if self.type == CameraType.sony:
             url = f'{self.url}/command/inquiry.cgi'
