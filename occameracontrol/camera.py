@@ -79,22 +79,24 @@ class Camera:
         """Retrieve whether or not the camera is in Standby.
         For Panasonic camera AW-UE70:
             0   if      Standby
-            1   if      On  
+            1   if      On
             3   if      Transferring from Standby to On
-            TODO: Which panasonic models do we have? Maybe there is a difference for other models?
-            --> Works for the two models that we have  
-            
+            TODO:
+            - Which panasonic models do we have?
+            - Maybe there is a difference for other models?
+            --> Works for the two models that we have
+
         For Sony camera:
             0   if      Standby
-            1   if      On  
+            1   if      On
 
-            -1  if      Something went wrong    
+            -1  if      Something went wrong
         """
 
         if self.type == CameraType.panasonic:
             url = f'{self.url}/cgi-bin/aw_ptz'
             command = "#O"
-            params = {'cmd':command, 'res':1}
+            params = {'cmd': command, 'res': 1}
             auth = (self.user, self.password) \
                 if self.user and self.password else None
             logger.debug('GET %s with params: %s', url, params)
@@ -104,11 +106,15 @@ class Camera:
             while state == 3:
                 # Escape the transition from standby to on
                 time.sleep(3)
-                response = requests.get(url, auth=auth, params=params, timeout=5)
+                response = requests.get(
+                    url,
+                    auth=auth,
+                    params=params,
+                    timeout=5)
                 response.raise_for_status()
                 state = int(response.content.decode())
                 state = bool(state)
-            return(state)
+            return state
 
         if self.type == CameraType.sony:
             url = f'{self.url}/command/inquiry.cgi'
@@ -132,7 +138,7 @@ class Camera:
                     else:
                         state = False
             return state
-        
+
         # Else case
         return -1
 
@@ -142,7 +148,8 @@ class Camera:
         """
         if self.type == CameraType.panasonic:
             url = f'{self.url}/cgi-bin/aw_ptz'
-            # If the camera is in Standby, turn it on (Does this make sense here?)
+            # If the camera is in Standby, turn it on
+            # (Does this make sense here?)
             command = '#On' if not on else '#Of'
             params = {'cmd': command, 'res': 1}
             auth = (self.user, self.password) \
