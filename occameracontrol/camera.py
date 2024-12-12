@@ -75,7 +75,7 @@ class Camera:
         '''
         return f"'{self.agent.agent_id}' @ '{self.url}'"
 
-    def is_standby(self):
+    def is_on(self):
         """Retrieve whether or not the camera is in Standby.
         For Panasonic camera AW-UE70:
             0   if      Standby
@@ -102,7 +102,7 @@ class Camera:
             logger.debug('GET %s with params: %s', url, params)
             response = requests.get(url, auth=auth, params=params, timeout=5)
             response.raise_for_status()
-            state = int(response.content.decode())
+            state = int(response.content.decode().removeprefix('p'))
             while state == 3:
                 # Escape the transition from standby to on
                 time.sleep(3)
@@ -112,7 +112,7 @@ class Camera:
                     params=params,
                     timeout=5)
                 response.raise_for_status()
-                state = int(response.content.decode())
+                state = int(response.content.decode().removeprefix('p'))
             return bool(state)
 
         if self.type == CameraType.sony:
@@ -138,15 +138,16 @@ class Camera:
                         return False
         return False
 
-    def activate_camera(self, on=True):
+    def set_power(self, turn_on=True):
         """Activate the camera or put it into standby mode.
-        :param bool on: camera should be online or standby (default: True)
+        :param bool on: camera should be turned on (True)
+                 or set to standby (False) (default: True)
         """
         if self.type == CameraType.panasonic:
             url = f'{self.url}/cgi-bin/aw_ptz'
             # If the camera is in Standby, turn it on
             # (Does this make sense here?)
-            command = '#On' if not on else '#Of'
+            command = '#On' if not turn_on else '#Of'
             params = {'cmd': command, 'res': 1}
             auth = (self.user, self.password) \
                 if self.user and self.password else None
@@ -157,7 +158,7 @@ class Camera:
         elif self.type == CameraType.sony:
             url = f'{self.url}/command/main.cgi'
             # If the camera is in Standby, turn it on
-            command = 'on' if not on else 'standby'
+            command = 'on' if not turn_on else 'standby'
             params = {'System': command}
             headers = {'referer': f'{self.url}/'}
             auth = HTTPDigestAuth(self.user, self.password) \
@@ -236,17 +237,23 @@ class Camera:
                 logger.info('[%s] Event `%s` started', agent_id, event.title)
                 logger.info('[%s] Moving to preset %i', agent_id,
                             self.preset_active)
-                self.activate_camera(self.is_standby())
+                if not self.is_on():
+                    self.set_power()
+                    time.sleep(10)
                 self.move_to_preset(self.preset_active)
         else:  # No active event
             if self.position != self.preset_inactive:
                 logger.info('[%s] Returning to preset %i', agent_id,
                             self.preset_inactive)
-                self.activate_camera(self.is_standby())
+                if not self.is_on():
+                    self.set_power()
+                    time.sleep(10)
                 self.move_to_preset(self.preset_inactive)
 
         if time.time() - self.last_updated >= self.update_frequency:
             logger.info('[%s] Re-sending preset %i to camera', agent_id,
                         self.position)
-            self.activate_camera(self.is_standby())
+            if not self.is_on():
+                self.set_power()
+                time.sleep(10)
             self.move_to_preset(self.position)
