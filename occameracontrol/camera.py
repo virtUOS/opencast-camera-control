@@ -146,7 +146,6 @@ class Camera:
         if self.type == CameraType.panasonic:
             url = f'{self.url}/cgi-bin/aw_ptz'
             # If the camera is in Standby, turn it on
-            # (Does this make sense here?)
             command = '#On' if not turn_on else '#Of'
             params = {'cmd': command, 'res': 1}
             auth = (self.user, self.password) \
