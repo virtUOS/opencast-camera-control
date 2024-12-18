@@ -26,7 +26,7 @@ from typing import Optional
 
 from occameracontrol.agent import Agent
 from occameracontrol.metrics import register_camera_move, \
-        register_camera_expectation
+        register_camera_expectation, register_camera_status
 
 
 logger = logging.getLogger(__name__)
@@ -75,7 +75,7 @@ class Camera:
         '''
         return f"'{self.agent.agent_id}' @ '{self.url}'"
 
-    def is_on(self):
+    def is_on(self) -> bool:
         """Retrieve whether or not the camera is in Standby.
         For Panasonic camera AW-UE70:
             0   if      Standby
@@ -92,7 +92,7 @@ class Camera:
 
             -1  if      Something went wrong
         """
-
+        state = False
         if self.type == CameraType.panasonic:
             url = f'{self.url}/cgi-bin/aw_ptz'
             command = "#O"
@@ -102,8 +102,8 @@ class Camera:
             logger.debug('GET %s with params: %s', url, params)
             response = requests.get(url, auth=auth, params=params, timeout=5)
             response.raise_for_status()
-            state = int(response.content.decode().removeprefix('p'))
-            while state == 3:
+            state_int = int(response.content.decode().removeprefix('p'))
+            while state_int == 3:
                 # Escape the transition from standby to on
                 time.sleep(3)
                 response = requests.get(
@@ -112,8 +112,7 @@ class Camera:
                     params=params,
                     timeout=5)
                 response.raise_for_status()
-                state = int(response.content.decode().removeprefix('p'))
-            return bool(state)
+                state = bool(state_int)
 
         if self.type == CameraType.sony:
             url = f'{self.url}/command/inquiry.cgi'
@@ -129,14 +128,14 @@ class Camera:
                                     timeout=5)
             response.raise_for_status()
             values = response.content.decode().split("&")
-            state = False
             for v in values:
                 if "Power" in v:
                     if v.removeprefix("Power=")[1] == 'on':
-                        return True
+                        state = True
                     else:
-                        return False
-        return False
+                        state = False
+        register_camera_status(self.url, state)
+        return state
 
     def set_power(self, turn_on=True):
         """Activate the camera or put it into standby mode.
@@ -169,6 +168,8 @@ class Camera:
                                     params=params,
                                     timeout=5)
             response.raise_for_status()
+
+        self.is_on()
 
     def move_to_preset(self, preset: int):
         '''Move the PTZ camera to the specified preset position
@@ -236,6 +237,7 @@ class Camera:
                 logger.info('[%s] Event `%s` started', agent_id, event.title)
                 logger.info('[%s] Moving to preset %i', agent_id,
                             self.preset_active)
+                logger.debug('[%s] Retrieving the camera state', agent_id)
                 if not self.is_on():
                     self.set_power()
                     time.sleep(10)
@@ -244,15 +246,19 @@ class Camera:
             if self.position != self.preset_inactive:
                 logger.info('[%s] Returning to preset %i', agent_id,
                             self.preset_inactive)
+                logger.debug('[%s] Retrieving the camera state', agent_id)
                 if not self.is_on():
                     self.set_power()
                     time.sleep(10)
                 self.move_to_preset(self.preset_inactive)
-
+        # Regular update
         if time.time() - self.last_updated >= self.update_frequency:
             logger.info('[%s] Re-sending preset %i to camera', agent_id,
                         self.position)
+
+            logger.debug('[%s] Retrieving the camera state', agent_id)
             if not self.is_on():
                 self.set_power()
                 time.sleep(10)
+                register_camera_status(self.url, self.is_on())
             self.move_to_preset(self.position)
