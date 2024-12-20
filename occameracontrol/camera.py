@@ -24,9 +24,9 @@ from enum import Enum
 from requests.auth import HTTPDigestAuth
 from typing import Optional
 
-from occameracontrol.agent import Agent
+from agent import Agent
 from occameracontrol.metrics import register_camera_move, \
-        register_camera_expectation, register_camera_status
+    register_camera_expectation, register_camera_status
 
 
 logger = logging.getLogger(__name__)
@@ -112,7 +112,7 @@ class Camera:
                     params=params,
                     timeout=5)
                 response.raise_for_status()
-                state = bool(state_int)
+            state = bool(state_int)
 
         if self.type == CameraType.sony:
             url = f'{self.url}/command/inquiry.cgi'
@@ -134,7 +134,9 @@ class Camera:
                         state = True
                     else:
                         state = False
-        register_camera_status(self.url, state)
+            
+        logger.debug("[%s] is_on is %s (%d)", self.url, state, int(state))
+        register_camera_status(self.url, int(state))
         return state
 
     def set_power(self, turn_on=True):
@@ -241,6 +243,9 @@ class Camera:
                 if not self.is_on():
                     self.set_power()
                     time.sleep(10)
+
+                # To update the metrics
+                self.is_on()
                 self.move_to_preset(self.preset_active)
         else:  # No active event
             if self.position != self.preset_inactive:
@@ -250,6 +255,9 @@ class Camera:
                 if not self.is_on():
                     self.set_power()
                     time.sleep(10)
+
+                # To update the metrics
+                self.is_on()
                 self.move_to_preset(self.preset_inactive)
         # Regular update
         if time.time() - self.last_updated >= self.update_frequency:
@@ -260,5 +268,6 @@ class Camera:
             if not self.is_on():
                 self.set_power()
                 time.sleep(10)
-                register_camera_status(self.url, self.is_on())
+            # To update the metrics
+            self.is_on()
             self.move_to_preset(self.position)

@@ -47,7 +47,7 @@ camera_position_expected = Gauge(
         ('camera',))
 camera_is_on = Gauge(
         'camera_status',
-        'Whether the camera is on (True) or in standby (False)',
+        'Whether the camera is On (1.0) or Standby (0.0)',
         ('camera',))
 
 
@@ -124,15 +124,14 @@ def register_camera_expectation(camera: str, position: int):
     camera_position_expected.labels(camera).set(position)
 
 
-def register_camera_status(camera: str, status: bool):
+def register_camera_status(camera: str, status: int):
     '''Update metrics for the status of the camera. This ensures the (power)
     state of the camera is available as part of the metrics.
 
     :param camera: Camera identified
-    :param status: True if camera is 'on', False if 'standby'
+    :param status: 1.0 if camera is 'on', 0.0 if 'standby'
     '''
     camera_is_on.labels(camera).set(status)
-
 
 def start_metrics_exporter():
     '''Start the web server for the metrics exporter endpoint if it is enabled
