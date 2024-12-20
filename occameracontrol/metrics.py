@@ -45,6 +45,10 @@ camera_position_expected = Gauge(
         'camera_position_expected',
         'The position (preset number) a camera should be in',
         ('camera',))
+camera_is_on = Gauge(
+        'camera_status',
+        'Whether the camera is On (1.0) or Standby (0.0)',
+        ('camera',))
 
 
 class RequestErrorHandler():
@@ -118,6 +122,16 @@ def register_camera_expectation(camera: str, position: int):
     :param position: New camera position
     '''
     camera_position_expected.labels(camera).set(position)
+
+
+def register_camera_status(camera: str, status: int):
+    '''Update metrics for the status of the camera. This ensures the (power)
+    state of the camera is available as part of the metrics.
+
+    :param camera: Camera identified
+    :param status: 1.0 if camera is 'on', 0.0 if 'standby'
+    '''
+    camera_is_on.labels(camera).set(status)
 
 
 def start_metrics_exporter():

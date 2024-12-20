@@ -24,9 +24,9 @@ from enum import Enum
 from requests.auth import HTTPDigestAuth
 from typing import Optional
 
-from occameracontrol.agent import Agent
+from agent import Agent
 from occameracontrol.metrics import register_camera_move, \
-        register_camera_expectation
+    register_camera_expectation, register_camera_status
 
 
 logger = logging.getLogger(__name__)
@@ -75,13 +75,78 @@ class Camera:
         '''
         return f"'{self.agent.agent_id}' @ '{self.url}'"
 
-    def activate_camera(self, on=True):
+    def is_on(self) -> bool:
+        """Retrieve whether or not the camera is in Standby.
+        For Panasonic camera AW-UE70:
+            0   if      Standby
+            1   if      On
+            3   if      Transferring from Standby to On
+            TODO:
+            - Which panasonic models do we have?
+            - Maybe there is a difference for other models?
+            --> Works for the two models that we have
+
+        For Sony camera:
+            0   if      Standby
+            1   if      On
+
+            -1  if      Something went wrong
+        """
+        state = False
+        if self.type == CameraType.panasonic:
+            url = f'{self.url}/cgi-bin/aw_ptz'
+            command = "#O"
+            params = {'cmd': command, 'res': 1}
+            auth = (self.user, self.password) \
+                if self.user and self.password else None
+            logger.debug('GET %s with params: %s', url, params)
+            response = requests.get(url, auth=auth, params=params, timeout=5)
+            response.raise_for_status()
+            state_int = int(response.content.decode().removeprefix('p'))
+            while state_int == 3:
+                # Escape the transition from standby to on
+                time.sleep(3)
+                response = requests.get(
+                    url,
+                    auth=auth,
+                    params=params,
+                    timeout=5)
+                response.raise_for_status()
+            state = bool(state_int)
+
+        if self.type == CameraType.sony:
+            url = f'{self.url}/command/inquiry.cgi'
+            params = {'inq': 'system'}
+            headers = {'referer': f'{self.url}/'}
+            auth = HTTPDigestAuth(self.user, self.password) \
+                if self.user and self.password else None
+            logger.debug('GET %s with params: %s', url, params)
+            response = requests.get(url,
+                                    auth=auth,
+                                    headers=headers,
+                                    params=params,
+                                    timeout=5)
+            response.raise_for_status()
+            values = response.content.decode().split("&")
+            for v in values:
+                if "Power" in v:
+                    if v.removeprefix("Power=")[1] == 'on':
+                        state = True
+                    else:
+                        state = False
+
+        register_camera_status(self.url, int(state))
+        return state
+
+    def set_power(self, turn_on=True):
         """Activate the camera or put it into standby mode.
-        :param bool on: camera should be online or standby (default: True)
+        :param bool on: camera should be turned on (True)
+                 or set to standby (False) (default: True)
         """
         if self.type == CameraType.panasonic:
             url = f'{self.url}/cgi-bin/aw_ptz'
-            command = '#On' if on else '#Of'
+            # If the camera is in Standby, turn it on
+            command = '#On' if not turn_on else '#Of'
             params = {'cmd': command, 'res': 1}
             auth = (self.user, self.password) \
                 if self.user and self.password else None
@@ -91,7 +156,8 @@ class Camera:
 
         elif self.type == CameraType.sony:
             url = f'{self.url}/command/main.cgi'
-            command = 'on' if on else 'standby'
+            # If the camera is in Standby, turn it on
+            command = 'on' if not turn_on else 'standby'
             params = {'System': command}
             headers = {'referer': f'{self.url}/'}
             auth = HTTPDigestAuth(self.user, self.password) \
@@ -103,6 +169,8 @@ class Camera:
                                     params=params,
                                     timeout=5)
             response.raise_for_status()
+
+        self.is_on()
 
     def move_to_preset(self, preset: int):
         '''Move the PTZ camera to the specified preset position
@@ -170,17 +238,39 @@ class Camera:
                 logger.info('[%s] Event `%s` started', agent_id, event.title)
                 logger.info('[%s] Moving to preset %i', agent_id,
                             self.preset_active)
-                self.activate_camera()
+                logger.debug('[%s] Retrieving the camera state', agent_id)
+                if not self.is_on():
+                    self.set_power()
+                    time.sleep(10)
+
+                # To update the metrics
+                self.is_on()
+
                 self.move_to_preset(self.preset_active)
         else:  # No active event
             if self.position != self.preset_inactive:
                 logger.info('[%s] Returning to preset %i', agent_id,
                             self.preset_inactive)
-                self.activate_camera()
-                self.move_to_preset(self.preset_inactive)
+                logger.debug('[%s] Retrieving the camera state', agent_id)
+                if not self.is_on():
+                    self.set_power()
+                    time.sleep(10)
 
+                # To update the metrics
+                self.is_on()
+
+                self.move_to_preset(self.preset_inactive)
+        # Regular update
         if time.time() - self.last_updated >= self.update_frequency:
             logger.info('[%s] Re-sending preset %i to camera', agent_id,
                         self.position)
-            self.activate_camera()
+
+            logger.debug('[%s] Retrieving the camera state', agent_id)
+            if not self.is_on():
+                self.set_power()
+                time.sleep(10)
+
+            # To update the metrics
+            self.is_on()
+
             self.move_to_preset(self.position)
