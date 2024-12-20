@@ -134,8 +134,7 @@ class Camera:
                         state = True
                     else:
                         state = False
-            
-        logger.debug("[%s] is_on is %s (%d)", self.url, state, int(state))
+
         register_camera_status(self.url, int(state))
         return state
 
@@ -246,6 +245,7 @@ class Camera:
 
                 # To update the metrics
                 self.is_on()
+
                 self.move_to_preset(self.preset_active)
         else:  # No active event
             if self.position != self.preset_inactive:
@@ -258,6 +258,7 @@ class Camera:
 
                 # To update the metrics
                 self.is_on()
+
                 self.move_to_preset(self.preset_inactive)
         # Regular update
         if time.time() - self.last_updated >= self.update_frequency:
@@ -268,6 +269,8 @@ class Camera:
             if not self.is_on():
                 self.set_power()
                 time.sleep(10)
+
             # To update the metrics
             self.is_on()
+
             self.move_to_preset(self.position)

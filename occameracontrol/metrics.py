@@ -133,6 +133,7 @@ def register_camera_status(camera: str, status: int):
     '''
     camera_is_on.labels(camera).set(status)
 
+
 def start_metrics_exporter():
     '''Start the web server for the metrics exporter endpoint if it is enabled
     in the configuration.
