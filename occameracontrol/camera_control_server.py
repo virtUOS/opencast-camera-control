@@ -15,15 +15,14 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import logging
-from importlib.metadata import requires
 
-from confygure import config_t
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from flask import Flask, Response
 
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
 
 @app.route('/control/<string:status>/<string:req_camera_url>')
 # @requires_auth
@@ -33,43 +32,59 @@ def activate_camera(status, req_camera_url):
     """
     if status == "manual":
         logger.info('Camera with URL "[%s]" will be controlled manually and ' +
-                            'therefore it\'s position won\'t be updated automatically.', req_camera_url)
+                    'therefore it\'s position won\'t be updated automatically',
+                    req_camera_url)
     elif status == "automatic":
-        logger.info('Camera with URL "[%s]" will switch to automatic controlling. The ' +
-                            'camera\'s position will be adjusted to the corresponding agent\'s status automatically.', req_camera_url)
+        logger.info('Camera with URL "[%s]" will switch to automatic ' +
+                    'controlling. The camera\'s position will be ' +
+                    'adjusted to the corresponding agent\'s status ' +
+                    'automatically.', req_camera_url)
     else:
-        return f"ERROR<br/>Given status '{status}' is invalid. Please use 'manual' or 'automatic' instead."
-
+        return 'ERROR<br/>Given status %s is invalid.', status
 
     # Get rid of http or https prefixes to ensure reliable comparability
-    sanitized_camera_url = str.replace(req_camera_url, 'http://', '').replace('https://', '')
+    sanitized_camera_url = str.replace(req_camera_url, 'http://', '')
+    sanitized_camera_url = str.replace(req_camera_url, 'https://', '')
     cameras = app.config["cameras"]
     for camera in cameras:
-        camera_url = str.replace(getattr(camera, 'url'), 'http://', '').replace('https://', '')
+        camera_url = str.replace(getattr(camera, 'url'), 'http://', '')
+        camera_url = str.replace(getattr(camera, 'url'), 'https://', '')
+
         if sanitized_camera_url == camera_url:
             setattr(camera, 'control', status)
             # Resets the current position of the camera
             setattr(camera, 'position', -1)
-            return f"SUCCESS<br/>Successfully set camera with url '{camera_url}' to control status <b>'{status}'</b>."
-        
+            return (
+                f"Successfully set camera with url '{camera_url} "
+                f"to control status <b>'{status}'</b>."
+            )
     logger.info(f"Camera with url '{req_camera_url}' could not be found.")
     return f"ERROR<br/>Camera with url '{req_camera_url}' could not be found."
 
+
 @app.route('/control_status/<string:req_camera_url>')
 def view_current_camera_control_status(req_camera_url):
-    """ Endpoint for requesting the current control status (manual or automatic) for a camera.
+    """ Endpoint for requesting the current control status
+        (manual or automatic) for a camera.
         The desired camera is identified by the passed camera url.
     """
     # Get rid of http or https prefixes to ensure reliable comparability
-    sanitized_camera_url = str.replace(req_camera_url, 'http://', '').replace('https://', '')
+    sanitized_camera_url = str.replace(req_camera_url, 'http://', '')
+    sanitized_camera_url = str.replace(req_camera_url, 'https://', '')
+
     cameras = app.config["cameras"]
     for camera in cameras:
-        camera_url = str.replace(getattr(camera, 'url'), 'http://', '').replace('https://', '')
+        camera_url = str.replace(getattr(camera, 'url'), 'http://', '')
+        camera_url = str.replace(getattr(camera, 'url'), 'https://', '')
         if sanitized_camera_url == camera_url:
-            return f"STATUS<br/>The control status of the camera with url '{req_camera_url}' is <b>{getattr(camera, 'control')}</b>"
-        
+            return (
+                f"STATUS<br/>The control status of the camera "
+                f"with url '{req_camera_url}' is "
+                f"<b>{getattr(camera, 'control')}</b>"
+            )
     logger.info(f"Camera with url '{req_camera_url}' could not be found.")
     return f"ERROR</br>Camera with url '{req_camera_url}' could not be found."
+
 
 # expose camera control metrics
 @app.route('/metrics')
@@ -78,6 +93,7 @@ def metrics():
     # registry = CollectorRegistry()
     # multiprocess.MultiProcessCollector(registry)
     return Response(generate_latest(), content_type=CONTENT_TYPE_LATEST)
+
 
 def start_camera_control_server(cameras):
     """Start the flask server for managing the camera control

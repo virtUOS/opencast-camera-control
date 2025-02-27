@@ -106,7 +106,8 @@ def main():
     agent_update.start()
 
     for camera in cameras:
-        logger.info('Starting camera control for %s with control status %s', camera, getattr(camera, 'control'))
+        logger.info('Starting camera control for %s with control status %s',
+                    camera, getattr(camera, 'control'))
         control_thread = Thread(target=control_camera, args=(camera,))
         threads.append(control_thread)
         control_thread.start()

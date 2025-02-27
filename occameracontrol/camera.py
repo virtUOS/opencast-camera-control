@@ -53,9 +53,12 @@ class Camera:
     last_updated: float = 0.0
     update_frequency: int = 300
     # Flag for switching between automatic and manual camera control
-    # automatic  = The corresponding camera will be controlled automatically, i.e. the camera position will be adjusted
-    #              according to the agent's state and the values given in preset_active and preset_inactive
-    # manual     = The corresponding camera will be controlled manually. Values in preset_active and preset_inactive will
+    # automatic  = The corresponding camera will be controlled automatically,
+    #              i.e. the camera position will be adjusted
+    #              according to the agent's state and the values given
+    #              in preset_active and preset_inactive
+    # manual     = The corresponding camera will be controlled manually.
+    #              Values in preset_active and preset_inactive will
     #              be ignored as well as the agent's status
     control: str = "automatic"
 
@@ -150,7 +153,7 @@ class Camera:
         '''
         seconds = int(ts - time.time())  # seconds are enough accuracy
         return str(datetime.timedelta(seconds=seconds))
-    
+
     def check_calendar(self):
         agent_id = self.agent.agent_id
         level = logging.DEBUG if int(time.time()) % 60 else logging.INFO
@@ -178,7 +181,6 @@ class Camera:
         '''
         agent_id = self.agent.agent_id
         event = self.check_calendar()
-        
         if event.active():  # active event
             if self.position != self.preset_active:
                 logger.info('[%s] Event `%s` started', agent_id, event.title)
