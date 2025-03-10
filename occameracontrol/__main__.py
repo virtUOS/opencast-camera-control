@@ -26,6 +26,8 @@ from occameracontrol.agent import Agent
 from occameracontrol.camera import Camera
 from occameracontrol.metrics import start_metrics_exporter, RequestErrorHandler
 
+from occameracontrol.camera_control_server import start_camera_control_server
+
 
 logger = logging.getLogger(__name__)
 
@@ -57,7 +59,11 @@ def control_camera(camera: Camera):
             f'Failed to communicate with camera {camera}')
     while True:
         with error_handler:
-            camera.update_position()
+            if camera.control == "automatic":
+                camera.update_position()
+            else:
+                camera.activate_camera()
+                camera.check_calendar()
         time.sleep(1)
 
 
@@ -100,13 +106,17 @@ def main():
     agent_update.start()
 
     for camera in cameras:
-        logger.info('Starting camera control for %s', camera)
+        logger.info('Starting camera control for %s with control status %s',
+                    camera, getattr(camera, 'control'))
         control_thread = Thread(target=control_camera, args=(camera,))
         threads.append(control_thread)
         control_thread.start()
 
     # Start delivering metrics
     start_metrics_exporter()
+
+    # Start camera control server
+    start_camera_control_server(cameras=cameras)
 
     try:
         for thread in threads:

@@ -2,3 +2,4 @@ confygure >= 0.1.0
 prometheus-client >= 0.13.1
 python-dateutil
 requests
+flask >= 3.1.0

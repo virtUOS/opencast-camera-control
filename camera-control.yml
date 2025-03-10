@@ -39,6 +39,9 @@ camera_update_frequency: 300
 #     password: password to access the API (optional)
 #     preset_active: Camera preset to move to when recording (default: 1)
 #     preset_inactive: Camera preset to move to when not recording (default: 10)
+#     control: Flag for switching between automatic and manual camera control
+#              (default: "automatic")
+
 camera:
   test-agent:
     - url: http://camera-panasonic.example.com
