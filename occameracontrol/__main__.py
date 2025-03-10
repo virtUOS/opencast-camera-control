@@ -116,7 +116,9 @@ def main():
     start_metrics_exporter()
 
     # Start camera control server
-    start_camera_control_server(cameras=cameras)
+    auth = (config_rt(str, 'basic_auth', 'username'),
+            config_rt(str, 'basic_auth', 'password'))
+    start_camera_control_server(cameras=cameras, auth=auth)
 
     try:
         for thread in threads:

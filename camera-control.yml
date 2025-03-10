@@ -11,6 +11,10 @@ opencast:
   # Password of the specified Opencast user
   password: opencast
 
+basic_auth:
+  username: USER_NAME
+  password: CHANGE_ME
+
 calendar:
   # The frequency in which the calendar should be updated in seconds
   # Default: 120

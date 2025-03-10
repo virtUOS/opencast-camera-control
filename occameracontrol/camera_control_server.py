@@ -18,14 +18,15 @@ import logging
 
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from flask import Flask, Response
+from flask_basicauth import BasicAuth
 
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-
+basic_auth = BasicAuth(app)
 
 @app.route('/control/<string:status>/<string:req_camera_url>')
-# @requires_auth
+@basic_auth.required
 def activate_camera(status, req_camera_url):
     """ Endpoint for switching between manual and automatic camera control.
         The desired camera is identified by the passed req_camera_url.
@@ -63,6 +64,7 @@ def activate_camera(status, req_camera_url):
 
 
 @app.route('/control_status/<string:req_camera_url>')
+@basic_auth.required
 def view_current_camera_control_status(req_camera_url):
     """ Endpoint for requesting the current control status
         (manual or automatic) for a camera.
@@ -95,11 +97,13 @@ def metrics():
     return Response(generate_latest(), content_type=CONTENT_TYPE_LATEST)
 
 
-def start_camera_control_server(cameras):
+def start_camera_control_server(cameras, auth: tuple[str, str]):
     """Start the flask server for managing the camera control
     """
     logger.info('Starting camera control server')
     # start flask app
     # ToDo get host and port from config, default 127.0.0.1:8000
     app.config['cameras'] = cameras
+    app.config['BASIC_AUTH_USERNAME'] = auth[0]
+    app.config['BASIC_AUTH_PASSWORD'] = auth[1]
     app.run(host='127.0.0.1', port=8080)
