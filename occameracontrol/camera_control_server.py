@@ -43,13 +43,12 @@ def activate_camera(status, req_camera_url):
         return 'ERROR<br/>Given status %s is invalid.', status
 
     # Get rid of http or https prefixes to ensure reliable comparability
-    sanitized_camera_url = str.replace(req_camera_url, 'http://', '')
-    sanitized_camera_url = str.replace(req_camera_url, 'https://', '')
+    sanitized_camera_url = (req_camera_url.replace('http://', '')
+                            .replace('https://', ''))
     cameras = app.config["cameras"]
     for camera in cameras:
-        camera_url = str.replace(getattr(camera, 'url'), 'http://', '')
-        camera_url = str.replace(getattr(camera, 'url'), 'https://', '')
-
+        camera_url = (getattr(camera, 'url').replace('http://', '')
+                      .replace('https://', ''))
         if sanitized_camera_url == camera_url:
             setattr(camera, 'control', status)
             # Resets the current position of the camera
@@ -69,13 +68,12 @@ def view_current_camera_control_status(req_camera_url):
         The desired camera is identified by the passed camera url.
     """
     # Get rid of http or https prefixes to ensure reliable comparability
-    sanitized_camera_url = str.replace(req_camera_url, 'http://', '')
-    sanitized_camera_url = str.replace(req_camera_url, 'https://', '')
-
+    sanitized_camera_url = (req_camera_url.replace('http://', '')
+                            .replace('https://', ''))
     cameras = app.config["cameras"]
     for camera in cameras:
-        camera_url = str.replace(getattr(camera, 'url'), 'http://', '')
-        camera_url = str.replace(getattr(camera, 'url'), 'https://', '')
+        camera_url = (getattr(camera, 'url').replace('http://', '')
+                      .replace('https://', ''))
         if sanitized_camera_url == camera_url:
             return (
                 f"STATUS<br/>The control status of the camera "
