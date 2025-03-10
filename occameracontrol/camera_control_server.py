@@ -89,10 +89,10 @@ def view_current_camera_control_status(req_camera_url):
 
 # expose camera control metrics
 @app.route('/metrics')
-# @requires_auth
+@basic_auth.required
 def metrics():
-    # registry = CollectorRegistry()
-    # multiprocess.MultiProcessCollector(registry)
+    """ Endpoint for exposing the camera control metrics.
+    """
     return Response(generate_latest(), content_type=CONTENT_TYPE_LATEST)
 
 
