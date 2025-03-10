@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 basic_auth = BasicAuth(app)
 
+
 @app.route('/control/<string:status>/<string:req_camera_url>')
 @basic_auth.required
 def activate_camera(status, req_camera_url):
