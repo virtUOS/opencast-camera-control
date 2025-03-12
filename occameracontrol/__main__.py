@@ -15,6 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 import argparse
+import datetime
 import logging
 import sys
 import time
@@ -50,7 +51,7 @@ def update_agents(agents: list[Agent]):
         time.sleep(update_frequency)
 
 
-def control_camera(camera: Camera):
+def control_camera(camera: Camera, reset_hour=3):
     '''Control loop to trigger updating the camera position based on currently
     active events.
     '''
@@ -59,6 +60,14 @@ def control_camera(camera: Camera):
             f'Failed to communicate with camera {camera}')
     while True:
         with error_handler:
+            # Reset camera to automatic control at the hour
+            # specified in reset_hour
+            now = datetime.datetime.now()
+            if now.hour == reset_hour and now.minute < 1:
+                logger.info(f'It\'s {reset_hour} o\'clock ==> Reset camera'
+                            f' control to \'automatic\'')
+                camera.control = "automatic"
+                camera.position = -1
             if camera.control == "automatic":
                 camera.update_position()
             else:
