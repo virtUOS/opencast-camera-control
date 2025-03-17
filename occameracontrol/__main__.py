@@ -108,7 +108,7 @@ def main():
     agents = []
     reset_time = datetime.datetime.combine(
         date=datetime.date.today(),
-        time=datetime.time.fromisoformat(config_t(str,'reset_time')),
+        time=datetime.time.fromisoformat(config_t(str,'reset_time'))
     )
     logger.info('reset time is set to %s', reset_time)
     for agent_id, agent_cameras in config_rt(dict, 'camera').items():
@@ -129,7 +129,8 @@ def main():
     for camera in cameras:
         logger.info('Starting camera control for %s with control status %s',
                     camera, getattr(camera, 'control'))
-        control_thread = Thread(target=control_camera, args=(camera, reset_time))
+        control_thread = Thread(target=control_camera,
+                                args=(camera, reset_time))
         threads.append(control_thread)
         control_thread.start()
 
