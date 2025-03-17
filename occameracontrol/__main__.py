@@ -51,23 +51,30 @@ def update_agents(agents: list[Agent]):
         time.sleep(update_frequency)
 
 
-def control_camera(camera: Camera, reset_hour=3):
-    '''Control loop to trigger updating the camera position based on currently
+def control_camera(camera: Camera, reset_time: datetime.datetime):
+    """Control loop to trigger updating the camera position based on currently
     active events.
-    '''
+    param camera: Camera object to control
+    param reset_time: datetime to reset control to automatic (default: 03:00)
+    """
+    if reset_time is None:
+        reset_time = datetime.datetime.combine(
+            date=datetime.date.today(),
+            time=datetime.time(3, 00, 00)
+        )
     error_handler = RequestErrorHandler(
             camera.url,
             f'Failed to communicate with camera {camera}')
     while True:
         with error_handler:
-            # Reset camera to automatic control at the hour
-            # specified in reset_hour
-            now = datetime.datetime.now()
-            if now.hour == reset_hour and now.minute < 1:
-                logger.info(f'It\'s {reset_hour} o\'clock ==> Reset camera'
-                            f' control to \'automatic\'')
+            if reset_time < datetime.datetime.now():
+                logger.info(f'current time is {datetime.datetime.now()}, '
+                            f'the reset time is {reset_time}')
+                logger.info(f'Reset {camera} to \'automatic\'')
                 camera.control = "automatic"
                 camera.position = -1
+                reset_time = reset_time + datetime.timedelta(days=1)
+                logger.info(f'Next reset time is set to {reset_time}')
             if camera.control == "automatic":
                 camera.update_position()
             else:
@@ -99,6 +106,11 @@ def main():
 
     cameras = []
     agents = []
+    reset_time = datetime.datetime.combine(
+        date=datetime.date.today(),
+        time=datetime.time.fromisoformat(config_t(str,'reset_time')),
+    )
+    logger.info('reset time is set to %s', reset_time)
     for agent_id, agent_cameras in config_rt(dict, 'camera').items():
         agent = Agent(agent_id)
         agent.verify_agent()
@@ -117,7 +129,7 @@ def main():
     for camera in cameras:
         logger.info('Starting camera control for %s with control status %s',
                     camera, getattr(camera, 'control'))
-        control_thread = Thread(target=control_camera, args=(camera,))
+        control_thread = Thread(target=control_camera, args=(camera, reset_time))
         threads.append(control_thread)
         control_thread.start()
 
