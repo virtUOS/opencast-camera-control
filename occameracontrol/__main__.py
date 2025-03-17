@@ -108,7 +108,7 @@ def main():
     agents = []
     reset_time = datetime.datetime.combine(
         date=datetime.date.today(),
-        time=datetime.time.fromisoformat(config_t(str, 'reset_time'))
+        time=datetime.time.fromisoformat(config_rt(str, 'reset_time'))
     )
     logger.info('reset time is set to %s', reset_time)
     for agent_id, agent_cameras in config_rt(dict, 'camera').items():
