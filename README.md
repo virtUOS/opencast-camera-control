@@ -133,3 +133,14 @@ agent_calendar_update_time{agent="test_agent"} 1.707571943100096e+09
 # TYPE camera_position gauge
 camera_position{camera="http://camera-2-panasonic.example.com"} 10.0
 ```
+
+## Endpoints for switchting and checking the camera control status
+
+The camera control status of a specific camera can be changed as follows:
+- Accessing the endpoint '/control/automatic/<camera_url>' sets the control status of the given camera to 'automatic'.
+- Accessing the endpoint '/control/manual/<camera_url>' sets the control status of the given camera to 'manual'.
+The default control status is 'automatic'.
+
+The current control status of a specific camera can be requested by calling the endpoint '/control_status/<camera_url>'.
+
+At 03:00 am, all cameras will be reset to automatic control. You may adjust the reset time in your configuration file.

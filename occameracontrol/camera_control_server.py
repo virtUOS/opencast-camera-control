@@ -89,7 +89,6 @@ def view_current_camera_control_status(req_camera_url):
 
 # expose camera control metrics
 @app.route('/metrics')
-@basic_auth.required
 def metrics():
     """ Endpoint for exposing the camera control metrics.
     """
