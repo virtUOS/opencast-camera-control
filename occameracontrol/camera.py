@@ -52,6 +52,15 @@ class Camera:
     preset_inactive: int = 10
     last_updated: float = 0.0
     update_frequency: int = 300
+    # Flag for switching between automatic and manual camera control
+    # automatic  = The corresponding camera will be controlled automatically,
+    #              i.e. the camera position will be adjusted
+    #              according to the agent's state and the values given
+    #              in preset_active and preset_inactive
+    # manual     = The corresponding camera will be controlled manually.
+    #              Values in preset_active and preset_inactive will
+    #              be ignored as well as the agent's status
+    control: str = "automatic"
 
     def __init__(self,
                  agent: Agent,
@@ -60,7 +69,8 @@ class Camera:
                  user: Optional[str] = None,
                  password: Optional[str] = None,
                  preset_active: int = 1,
-                 preset_inactive: int = 10):
+                 preset_inactive: int = 10,
+                 control: str = "automatic"):
         self.agent = agent
         self.url = url.rstrip('/')
         self.type = CameraType[type]
@@ -69,6 +79,7 @@ class Camera:
         self.preset_active = preset_active
         self.preset_inactive = preset_inactive
         self.update_frequency = config_t(int, 'camera_update_frequency') or 300
+        self.control = control
 
     def __str__(self) -> str:
         '''Returns a string representation of this camera
@@ -107,6 +118,7 @@ class Camera:
     def move_to_preset(self, preset: int):
         '''Move the PTZ camera to the specified preset position
         '''
+        self.activate_camera()
         register_camera_expectation(self.url, preset)
         if self.type == CameraType.panasonic:
             params = {'cmd': f'#R{preset - 1:02}', 'res': 1}
@@ -142,11 +154,7 @@ class Camera:
         seconds = int(ts - time.time())  # seconds are enough accuracy
         return str(datetime.timedelta(seconds=seconds))
 
-    def update_position(self):
-        '''Check for currently active events with the camera's capture agent
-        and move the camera to the appropriate (active, inactive) position if
-        necessary.
-        '''
+    def check_calendar(self):
         agent_id = self.agent.agent_id
         level = logging.DEBUG if int(time.time()) % 60 else logging.INFO
 
@@ -155,7 +163,6 @@ class Camera:
             time.sleep(1)
 
         event = self.agent.next_event()
-
         if event.future():
             logger.log(level, '[%s] Next event `%s` starts in %s',
                        agent_id, event.title[:40], self.from_now(event.start))
@@ -165,22 +172,28 @@ class Camera:
         else:
             logger.log(level, '[%s] No planned events', agent_id)
 
+        return event
+
+    def update_position(self):
+        '''Check for currently active events with the camera's capture agent
+        and move the camera to the appropriate (active, inactive) position if
+        necessary.
+        '''
+        agent_id = self.agent.agent_id
+        event = self.check_calendar()
         if event.active():  # active event
             if self.position != self.preset_active:
                 logger.info('[%s] Event `%s` started', agent_id, event.title)
                 logger.info('[%s] Moving to preset %i', agent_id,
                             self.preset_active)
-                self.activate_camera()
                 self.move_to_preset(self.preset_active)
         else:  # No active event
             if self.position != self.preset_inactive:
                 logger.info('[%s] Returning to preset %i', agent_id,
                             self.preset_inactive)
-                self.activate_camera()
                 self.move_to_preset(self.preset_inactive)
 
         if time.time() - self.last_updated >= self.update_frequency:
             logger.info('[%s] Re-sending preset %i to camera', agent_id,
                         self.position)
-            self.activate_camera()
             self.move_to_preset(self.position)
