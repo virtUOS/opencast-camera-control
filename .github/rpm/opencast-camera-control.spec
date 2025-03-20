@@ -26,6 +26,8 @@ Requires:       python3dist(prometheus-client)
 Requires:       python3dist(python-dateutil)
 Requires:       python3dist(requests)
 Requires:       python3dist(setuptools)
+Requires:       python3dist(flask)
+Requires:       python3dist(flask-basicauth)
 
 BuildRequires:     systemd
 Requires(post):    systemd
