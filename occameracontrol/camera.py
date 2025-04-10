@@ -104,7 +104,7 @@ class Camera:
             url = f'{self.url}/command/main.cgi'
             command = 'on' if on else 'standby'
             params = {'System': command}
-            headers = {'referer': f'{self.url}/'}
+            headers = {'referer': f'{self.url}/index.html'}
             auth = HTTPDigestAuth(self.user, self.password) \
                 if self.user and self.password else None
             logger.debug('GET %s with params: %s', url, params)
@@ -113,7 +113,10 @@ class Camera:
                                     headers=headers,
                                     params=params,
                                     timeout=5)
-            response.raise_for_status()
+            try:
+                response.raise_for_status()
+            except requests.exceptions.HTTPError as e:
+                logger.error('Failed to activate camera: %s', e)
 
     def move_to_preset(self, preset: int):
         '''Move the PTZ camera to the specified preset position
@@ -132,7 +135,7 @@ class Camera:
         elif self.type == CameraType.sony:
             url = f'{self.url}/command/presetposition.cgi'
             params = {'PresetCall': f'{preset},24'}
-            headers = {'referer': f'{self.url}/'}
+            headers = {'referer': f'{self.url}/index.html'}
             auth = HTTPDigestAuth(self.user, self.password) \
                 if self.user and self.password else None
             logger.debug('GET %s with params: %s', url, params)
