@@ -18,9 +18,7 @@ import logging
 import requests
 import time
 
-from confygure import config_t
 from prometheus_client import Counter, Gauge
-from prometheus_client import start_http_server
 
 
 logger = logging.getLogger(__name__)
