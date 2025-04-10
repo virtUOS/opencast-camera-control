@@ -25,7 +25,7 @@ from threading import Thread
 
 from occameracontrol.agent import Agent
 from occameracontrol.camera import Camera
-from occameracontrol.metrics import start_metrics_exporter, RequestErrorHandler
+from occameracontrol.metrics import RequestErrorHandler
 
 from occameracontrol.camera_control_server import start_camera_control_server
 
@@ -133,9 +133,6 @@ def main():
                                 args=(camera, reset_time))
         threads.append(control_thread)
         control_thread.start()
-
-    # Start delivering metrics
-    start_metrics_exporter()
 
     # Start camera control server
     auth = (config_rt(str, 'basic_auth', 'username'),
